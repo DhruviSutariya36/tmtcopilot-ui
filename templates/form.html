@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+    <title>Upload Form</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Threat Modelling Tool</h2>
+
+        <!--Error message display -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-error">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+
+        <form method="POST" enctype="multipart/form-data">
+            <label for="category">Compliance:</label>
+            <select name="category" required>
+                <option value="">-- Choose --</option>
+                <option value="OWASP">OWASP</option>
+            </select>
+        
+            <label for="description">System Description:</label>
+            <textarea name="description" required></textarea>
+        
+            <label for="file">Upload CSV:</label>
+            <input type="file" name="file" accept=".csv" required>
+        
+            <button type="submit">Submit</button>
+        </form>
+        {% if result %}
+    <h3>File Uploaded and Parsed Successfully</h3>
+    <p><strong>Blob URL:</strong> <a href="{{ result.blob_url }}" target="_blank">{{ result.blob_url }}</a></p>
+
+    <h4>Parsed Data:</h4>
+    <table border="1">
+        <thead>
+            <tr>
+                {% for col in result.rows[0].keys() %}
+                    <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in result.rows %}
+                <tr>
+                    {% for value in row.values() %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+<!-- Show flash messages -->
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li style="color:red;">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+
+    </div>
+</body>
+</html>

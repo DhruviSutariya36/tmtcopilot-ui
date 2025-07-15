@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+    <title>Submission Result</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Thank You!</h2>
+        <p><strong>Description:</strong></p>
+        <div class="description">{{ description }}</div>
+
+        {% if filename %}
+            <p><strong>Uploaded File:</strong> {{ filename }}</p>
+        {% else %}
+            <p><strong>No file uploaded.</strong></p>
+        {% endif %}
+
+        <a href="/" class="button">Submit Another</a>
+    </div>
+</body>
+</html>
