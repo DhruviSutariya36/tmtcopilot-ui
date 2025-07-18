@@ -37,8 +37,16 @@
         </form>
         {% if result %}
     <h3>File Uploaded and Parsed Successfully</h3>
-    <p><strong>Blob URL:</strong> <a href="{{ result.blob_url }}" target="_blank">{{ result.blob_url }}</a></p>
-
+    <p>
+        <strong>Blob URL:</strong>
+        <a href="{{ result.blob_url }}" target="_blank">{{ result.blob_url }}</a>
+    </p>
+    
+    <form action="/download" method="GET">
+        <input type="hidden" name="blob_url" value="{{ result.blob_url }}">
+        <button type="submit">Download CSV</button>
+    </form>
+    
     <h4>Parsed Data:</h4>
     <table border="1">
         <thead>
