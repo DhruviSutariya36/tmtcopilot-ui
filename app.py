@@ -10,7 +10,7 @@ app.secret_key = "dev-secret-key"
 
 # Azure config
 PARSE_FUNCTION_URL = "https://dev-tmtcopilot-func-bedma3g8buhnczbj.centralindia-01.azurewebsites.net/api/process?"
-AZURE_DOWNLOAD_FUNCTION_URL = "https://<your-function-app>.azurewebsites.net/api/download-csv"
+AZURE_DOWNLOAD_FUNCTION_URL = "https://dev-tmtcopilot-func-bedma3g8buhnczbj.centralindia-01.azurewebsites.net/api/download-csv"
 
 @app.route("/", methods=["GET", "POST"])
 def index():
