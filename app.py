@@ -1,5 +1,7 @@
+from io import BytesIO
 import tempfile
-from flask import Flask, request, render_template, flash, redirect, send_file
+from urllib.parse import quote_plus
+from flask import Flask, request, render_template, flash, redirect, send_file, url_for
 from azure.storage.blob import BlobServiceClient
 from werkzeug.utils import secure_filename
 import os
@@ -57,34 +59,34 @@ def index():
 
     return render_template("form.html")
 
-@app.route("/download", methods=["GET"])
-def download_blob():
-    blob_url = request.args.get("blob_url")
+@app.route("/download", methods=["POST"])
+def download():
+    blob_url = request.form.get("blob_url")
     if not blob_url:
-        flash("Missing blob URL.")
-        return redirect("/")
-
-    # Extract filename from blob URL
-    filename = blob_url.split("/")[-1]
+        flash("Please provide both Blob URL", "error")
+        return redirect(url_for("index"))
+    filename = os.path.basename(blob_url)
+    params = {
+        "blob_url": blob_url,
+        "filename": filename
+    }
 
     try:
-        # Call Azure Function to download file
-        resp = requests.get(f"{AZURE_DOWNLOAD_FUNCTION_URL}?filename={filename}")
+        response = requests.get(AZURE_DOWNLOAD_FUNCTION_URL, params=params)
 
-        if resp.status_code != 200:
-            flash("Download failed from Azure Function.")
-            return redirect("/")
-
-        # Save to a temp file to send
-        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-            tmp_file.write(resp.content)
-            tmp_path = tmp_file.name
-
-        return send_file(tmp_path, as_attachment=True, download_name=filename, mimetype="text/csv")
-
+        if response.status_code == 200:
+            return send_file(
+                BytesIO(response.content),
+                as_attachment=True,
+                download_name=filename,
+                mimetype="text/csv"
+            )
+        else:
+            flash(f"Download failed. Status code: {response.status_code}. Response: {response.text}", "error")
+            return redirect(url_for("index"))
     except Exception as e:
-        flash(f"Error during download: {e}")
-        return redirect("/")
-    
+        flash(f"Error during download: {e}", "error")
+        return redirect(url_for("index"))
+
 if __name__ == "__main__":
     app.run(debug=True)
