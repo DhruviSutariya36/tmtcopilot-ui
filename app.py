@@ -61,10 +61,11 @@ def index():
 
 @app.route("/download", methods=["GET"])
 def download():
-    blob_url = request.form.get("blob_url")
+    blob_url = request.args.get("blob_url")
     if not blob_url:
-        flash("Please provide both Blob URL", "error")
+        flash("Please provide Blob URL", "error")
         return redirect(url_for("index"))
+
     filename = os.path.basename(blob_url)
     params = {
         "blob_url": blob_url,

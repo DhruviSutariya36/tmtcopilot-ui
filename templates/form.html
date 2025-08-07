@@ -4,14 +4,86 @@
     <title>Upload Form</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        .spinner {
-            display: none;
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        form {
             margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+        }
+
+        input[type="file"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .flash-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            position: relative;
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        /* Centered full-screen spinner */
+        .spinner-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
             border: 6px solid #f3f3f3;
             border-top: 6px solid #3498db;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
         }
 
@@ -19,27 +91,25 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        .alert-success {
-            color: #155724;
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            padding: 10px;
-            margin-top: 20px;
-            border-radius: 4px;
-        }
     </style>
+
     <script>
         function showSpinner() {
-            document.getElementById('spinner').style.display = 'block';
+            document.getElementById('spinner-overlay').style.display = 'flex';
         }
     </script>
 </head>
 <body>
     <div class="container">
-        <h2>Threat Modelling Tool</h2>
 
-        <!-- Flash error message display -->
+        <!-- Show success message at top -->
+        {% if result %}
+            <div class="alert-success">
+                ✅ File uploaded and parsed successfully.
+            </div>
+        {% endif %}
+
+        <!-- Show error flash messages -->
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <div class="flash-error">
@@ -49,6 +119,8 @@
                 </div>
             {% endif %}
         {% endwith %}
+
+        <h2>Threat Modelling Tool</h2>
 
         <!-- Upload form -->
         <form method="POST" enctype="multipart/form-data" onsubmit="showSpinner()">
@@ -67,23 +139,20 @@
             <button type="submit">Submit</button>
         </form>
 
-        <!-- Spinner -->
-        <div id="spinner" class="spinner"></div>
-
-        {% if result %}
-            <div class="alert-success">
-                File uploaded and parsed successfully.
-            </div>
-
-            {% if result.enriched_blob_url %}
-                <form action="/download" method="GET">
-                    <input type="hidden" name="blob_url" value="{{ result.enriched_blob_url }}">
-                    <button type="submit">Download CSV</button>
-                </form>
-            {% else %}
-                <p style="color:red;">Blob URL not available for download.</p>
-            {% endif %}
+        <!-- Download section -->
+        {% if result and result.enriched_blob_url %}
+            <form method="get" action="/download">
+                <input type="hidden" name="blob_url" value="{{ blob_url }}">
+                <button type="submit">Download CSV</button>
+            </form>
+        {% elif result %}
+            <p style="color:red;">Blob URL not available for download.</p>
         {% endif %}
+    </div>
+
+    <!-- Full screen spinner overlay -->
+    <div class="spinner-overlay" id="spinner-overlay">
+        <div class="spinner"></div>
     </div>
 </body>
 </html>
