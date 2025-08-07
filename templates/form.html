@@ -142,7 +142,7 @@
         <!-- Download section -->
         {% if result and result.enriched_blob_url %}
             <form method="get" action="/download">
-                <input type="hidden" name="blob_url" value="{{ blob_url }}">
+                <input type="hidden" name="blob_url" value="{{  result.enriched_blob_url }}">
                 <button type="submit">Download CSV</button>
             </form>
         {% elif result %}
