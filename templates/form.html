@@ -41,16 +41,20 @@
         <strong>Blob URL:</strong>
         <a href="{{ result.blob_url }}" target="_blank">{{ result.blob_url }}</a>
     </p>
-    
-    <form action="/download" method="GET">
-        <input type="hidden" name="blob_url" value="{{ result.blob_url }}">
-        <button type="submit">Download CSV</button>
-    </form>
     <details>
         <summary>Show Raw JSON Output</summary>
         <pre>{{ result | tojson(indent=2) }}</pre>
-      </details>
+    </details>
+    {% if result.enriched_blob_url %}
+        <form action="/download" method="GET">
+            <input type="hidden" name="blob_url" value="{{ result.enriched_blob_url }}">
+            <button type="submit">Download CSV</button>
+        </form>
+    {% else %}
+        <p style="color:red;">Blob URL not available for download.</p>
+    {% endif %}
 
+    
 {% endif %}
 
 <!-- Show flash messages -->
