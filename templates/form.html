@@ -3,71 +3,87 @@
 <head>
     <title>Upload Form</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .spinner {
+            display: none;
+            margin-top: 20px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+    </style>
+    <script>
+        function showSpinner() {
+            document.getElementById('spinner').style.display = 'block';
+        }
+    </script>
 </head>
 <body>
     <div class="container">
         <h2>Threat Modelling Tool</h2>
 
-        <!--Error message display -->
+        <!-- Flash error message display -->
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <div class="flash-error">
-                {% for message in messages %}
-                    <p>{{ message }}</p>
-                {% endfor %}
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
                 </div>
             {% endif %}
         {% endwith %}
 
-
-        <form method="POST" enctype="multipart/form-data">
+        <!-- Upload form -->
+        <form method="POST" enctype="multipart/form-data" onsubmit="showSpinner()">
             <label for="category">Compliance:</label>
             <select name="category" required>
                 <option value="">-- Choose --</option>
                 <option value="OWASP">OWASP</option>
             </select>
-        
+
             <label for="description">System Description:</label>
             <textarea name="description" required></textarea>
-        
+
             <label for="file">Upload CSV:</label>
             <input type="file" name="file" accept=".csv" required>
-        
+
             <button type="submit">Submit</button>
         </form>
+
+        <!-- Spinner -->
+        <div id="spinner" class="spinner"></div>
+
         {% if result %}
-    <h3>File Uploaded and Parsed Successfully</h3>
-    <p>
-        <strong>Blob URL:</strong>
-        <a href="{{ result.blob_url }}" target="_blank">{{ result.blob_url }}</a>
-    </p>
-    <details>
-        <summary>Show Raw JSON Output</summary>
-        <pre>{{ result | tojson(indent=2) }}</pre>
-    </details>
-    {% if result.enriched_blob_url %}
-        <form action="/download" method="GET">
-            <input type="hidden" name="blob_url" value="{{ result.enriched_blob_url }}">
-            <button type="submit">Download CSV</button>
-        </form>
-    {% else %}
-        <p style="color:red;">Blob URL not available for download.</p>
-    {% endif %}
+            <div class="alert-success">
+                File uploaded and parsed successfully.
+            </div>
 
-    
-{% endif %}
-
-<!-- Show flash messages -->
-{% with messages = get_flashed_messages() %}
-    {% if messages %}
-        <ul>
-            {% for message in messages %}
-                <li style="color:red;">{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-{% endwith %}
-
+            {% if result.enriched_blob_url %}
+                <form action="/download" method="GET">
+                    <input type="hidden" name="blob_url" value="{{ result.enriched_blob_url }}">
+                    <button type="submit">Download CSV</button>
+                </form>
+            {% else %}
+                <p style="color:red;">Blob URL not available for download.</p>
+            {% endif %}
+        {% endif %}
     </div>
 </body>
 </html>

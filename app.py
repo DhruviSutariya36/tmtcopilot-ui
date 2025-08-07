@@ -59,7 +59,7 @@ def index():
 
     return render_template("form.html")
 
-@app.route("/download", methods=["POST"])
+@app.route("/download", methods=["GET"])
 def download():
     blob_url = request.form.get("blob_url")
     if not blob_url:
