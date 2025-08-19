@@ -1,18 +1,13 @@
 from io import BytesIO
-import tempfile
-from urllib.parse import quote_plus
 from flask import Flask, request, render_template, flash, redirect, send_file, url_for
-from azure.storage.blob import BlobServiceClient
 from werkzeug.utils import secure_filename
-import os
 import requests
+import os
+from config import Config
 
 app = Flask(__name__)
-app.secret_key = "dev-secret-key"  
+app.config.from_object(Config)
 
-# Azure config
-PARSE_FUNCTION_URL = "https://dev-tmtcopilot-func-bedma3g8buhnczbj.centralindia-01.azurewebsites.net/api/process?"
-AZURE_DOWNLOAD_FUNCTION_URL = "https://dev-tmtcopilot-func-bedma3g8buhnczbj.centralindia-01.azurewebsites.net/api/download-csv"
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -39,7 +34,7 @@ def index():
                 "compliance": category
             }
 
-            response = requests.post(PARSE_FUNCTION_URL, data=data, files=files)
+            response = requests.post(app.config["PARSE_FUNCTION_URL"], data=data, files=files)
 
             try:
                 result = response.json()
@@ -48,7 +43,11 @@ def index():
                 return redirect(request.url)
 
             if response.status_code == 200:
-                return render_template("form.html", result=result)
+                return render_template(
+                    "form.html",
+                    result=result,
+                    download_url=url_for("download"),
+                )
             else:
                 flash(result.get("error", "Something went wrong."))
                 return redirect(request.url)
@@ -57,7 +56,8 @@ def index():
             flash(f"Upload error: {e}")
             return redirect(request.url)
 
-    return render_template("form.html")
+    return render_template("form.html", download_url=url_for("download"))
+
 
 @app.route("/download", methods=["GET"])
 def download():
@@ -73,7 +73,7 @@ def download():
     }
 
     try:
-        response = requests.get(AZURE_DOWNLOAD_FUNCTION_URL, params=params)
+        response = requests.get(app.config["AZURE_DOWNLOAD_FUNCTION_URL"], params=params)
 
         if response.status_code == 200:
             return send_file(
@@ -83,11 +83,15 @@ def download():
                 mimetype="text/csv"
             )
         else:
-            flash(f"Download failed. Status code: {response.status_code}. Response: {response.text}", "error")
+            flash(
+                f"Download failed. Status code: {response.status_code}. Response: {response.text}",
+                "error"
+            )
             return redirect(url_for("index"))
     except Exception as e:
         flash(f"Error during download: {e}", "error")
         return redirect(url_for("index"))
+
 
 if __name__ == "__main__":
     app.run(debug=True)

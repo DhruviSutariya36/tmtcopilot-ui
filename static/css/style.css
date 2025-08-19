@@ -25,7 +25,6 @@ form label {
     font-weight: bold;
 }
 
-/* Shared style for inputs, textareas, and select */
 textarea,
 input[type="file"],
 select {
@@ -39,7 +38,6 @@ select {
     box-sizing: border-box;
 }
 
-/* Enhance dropdown arrow */
 select {
     appearance: none;
     -webkit-appearance: none;
@@ -51,7 +49,6 @@ select {
     cursor: pointer;
 }
 
-/* Focus state for all form fields */
 textarea:focus,
 input[type="file"]:focus,
 select:focus {
@@ -60,7 +57,6 @@ select:focus {
     box-shadow: 0 0 0 2px rgba(0, 120, 215, 0.2);
 }
 
-/* Button styling */
 button, .button {
     display: block;
     margin-top: 30px;
@@ -96,5 +92,3 @@ button:hover, .button:hover {
     border-radius: 6px;
     font-weight: bold;
 }
-
-
