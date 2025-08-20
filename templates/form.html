@@ -1,140 +1,121 @@
 <!doctype html>
 <html>
 <head>
-    <title>Upload Form</title>
+    <title>Threat Modelling Tool</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f6fa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-            width: 420px;
-            text-align: center;
-        }
-
-        h2 {
-            margin-bottom: 20px;
-            font-size: 22px;
-            color: #333;
-        }
-
-        input, select, button {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
-
-        button {
-            background: #3498db;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            background: #2980b9;
-        }
-
-        /* Spinner Overlay */
-        .spinner-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255,255,255,0.8);
-            display: none; /* hidden by default */
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .spinner {
-            border: 8px solid #f3f3f3;
-            border-top: 8px solid #3498db;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .download-section {
-            margin-top: 20px;
-        }
-
-        .error {
-            color: red;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f6fa; }
+        .container { max-width: 600px; margin: 50px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h2 { text-align: center; margin-bottom: 20px; color: #2f3640; }
+        label { display: block; margin-top: 15px; font-weight: 600; }
+        input[type="file"], select, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #dcdde1; }
+        button { margin-top: 20px; padding: 10px 20px; background: #3498db; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        .spinner-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.7); z-index: 1000; justify-content:center; align-items:center; }
+        .spinner { border: 8px solid #f3f3f3; border-top: 8px solid #3498db; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .alert-success { color: green; font-weight: bold; margin-top: 20px; text-align: center; }
+        .flash-error { color: red; margin-top: 20px; text-align: center; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Upload CSV</h2>
+<div class="container">
 
-        <!-- Upload Form -->
-        <form method="post" enctype="multipart/form-data">
-            <input type="file" name="file" required>
-            <input type="text" name="system_description" placeholder="System Description" required>
-            <select name="compliance_category" required>
-                <option value="OWASP">OWASP</option>
-                <option value="NIST">NIST</option>
-                <option value="ISO">ISO</option>
-            </select>
-            <button type="submit">Upload & Process</button>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-error">
+                {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <h2>Threat Modelling Tool</h2>
+
+    <form id="uploadForm" method="POST" enctype="multipart/form-data">
+        <label for="category">Compliance:</label>
+        <select name="category" required>
+            <option value="">-- Choose --</option>
+            <option value="OWASP">OWASP</option>
+        </select>
+
+        <label for="description">System Description:</label>
+        <textarea name="description" required></textarea>
+
+        <label for="file">Upload CSV:</label>
+        <input type="file" name="file" accept=".csv" required>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="resultSection" style="display:none;">
+        <div class="alert-success">File enriched successfully!</div>
+        <form id="downloadForm" method="get" action="{{ url_for('download') }}">
+            <input type="hidden" name="blob_url" id="blob_url">
+            <input type="hidden" name="filename" id="filename">
+            <button type="submit">Download CSV</button>
         </form>
-
-        <!-- Download Section -->
-        <div class="download-section">
-            {% if result and result.enriched_blob_url %}
-                <form method="get" action="/download">
-                    <input type="hidden" name="blob_url" value="{{ result.enriched_blob_url }}">
-                    <input type="hidden" name="filename" value="enriched.csv">
-                    <button type="submit">Download CSV</button>
-                </form>
-            {% elif result %}
-                <p class="error">Blob URL not available for download.</p>
-            {% endif %}
-        </div>
     </div>
+</div>
 
-    <!-- Full screen spinner overlay -->
-    <div class="spinner-overlay" id="spinner-overlay">
-        <div class="spinner"></div>
-    </div>
+<div class="spinner-overlay" id="spinner-overlay">
+    <div class="spinner"></div>
+</div>
 
-    <script>
-        // Show spinner only when form is submitted
-        document.addEventListener("DOMContentLoaded", function () {
-            const form = document.querySelector("form[method='post']");
-            const spinner = document.getElementById("spinner-overlay");
+<script>
+const form = document.getElementById("uploadForm");
+const spinner = document.getElementById("spinner-overlay");
+const resultSection = document.getElementById("resultSection");
+const blobInput = document.getElementById("blob_url");
+const filenameInput = document.getElementById("filename");
 
-            if (form) {
-                form.addEventListener("submit", function () {
-                    spinner.style.display = "flex"; // show spinner
-                });
-            }
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    spinner.style.display = "flex";
+
+    const formData = new FormData(form);
+
+    try {
+        // POST to Durable Function starter
+        const starterResp = await fetch("{{ url_for('index') }}", {
+            method: "POST",
+            body: formData
         });
-    </script>
+        if (!starterResp.ok) throw new Error("Failed to start enrichment");
+
+        const starterData = await starterResp.json();
+        let statusUrl = starterData.statusQueryGetUri;
+        if (!statusUrl) throw new Error("No status URL returned");
+
+        // Poll every 10 seconds
+        let enrichmentCompleted = false;
+        while (!enrichmentCompleted) {
+            const statusResp = await fetch(statusUrl);
+            const statusData = await statusResp.json();
+            const runtimeStatus = statusData.runtimeStatus;
+            console.log("Orchestration status:", runtimeStatus);
+
+            if (runtimeStatus === "Completed") {
+                enrichmentCompleted = true;
+                const output = statusData.output || {};
+                blobInput.value = output.enriched_blob_url;
+                filenameInput.value = formData.get("file").name;
+                spinner.style.display = "none";
+                resultSection.style.display = "block";
+            } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
+                enrichmentCompleted = true;
+                spinner.style.display = "none";
+                alert("Durable Function failed: " + runtimeStatus);
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 10000)); // 10s delay
+            }
+        }
+
+    } catch (err) {
+        spinner.style.display = "none";
+        alert("Error: " + err.message);
+        console.error(err);
+    }
+});
+</script>
 </body>
 </html>
