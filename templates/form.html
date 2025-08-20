@@ -2,62 +2,66 @@
 <html>
 <head>
     <title>Upload Form</title>
-    <!-- Load CSS dynamically -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         body {
             font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f4f6f8;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+            width: 400px;
+            text-align: center;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        .btn-primary {
+            background: #0078d7;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #005a9e;
+        }
+        .message {
+            margin-top: 1rem;
+            color: #333;
+        }
+        .error {
+            color: red;
+            margin-top: 1rem;
         }
     </style>
-
-    <script>
-        function showSpinner() {
-            document.getElementById('spinner-overlay').style.display = 'flex';
-        }
-    </script>
 </head>
 <body>
-    <div class="container">
+<div class="container">
+    <h2>Upload CSV</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" required><br><br>
+        <input type="text" name="system_desc" placeholder="System Description" required><br><br>
+        <input type="text" name="compliance" placeholder="Compliance Category" required><br><br>
+        <button type="submit" class="btn btn-primary">Upload</button>
+    </form>
 
-        <!-- Show success message at top -->
-        {% if result %}
-            <div class="alert-success">
-                File uploaded and enriched successfully.
-            </div>
-        {% endif %}
+    {% if status_url %}
+        <div class="message">
+            <p>Processing started. Click below to check progress:</p>
+            <a href="{{ url_for('check_status') }}?status_url={{ status_url }}" class="btn btn-primary">Check Status</a>
+        </div>
+    {% endif %}
 
-        <!-- Show error flash messages -->
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="flash-error">
-                    {% for message in messages %}
-                        <p>{{ message }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
-        <h2>Threat Modelling Tool</h2>
-
-        <!-- Upload form -->
-        <form method="POST" action="{{ url_for('index') }}" enctype="multipart/form-data" onsubmit="showSpinner()">
-            
-            <label for="category">Compliance:</label>
-            <select name="category" required>
-                <option value="">-- Choose --</option>
-                <option value="OWASP">OWASP</option>
-            </select>
-
-            <label for="description">System Description:</label>
-            <textarea name="description" required></textarea>
-
-            <label for="file">Upload CSV:</label>
-            <input type="file" name="file" accept=".csv" required>
-
-            <button type="submit">Submit</button>
-        </form>
-
-        <!-- Download section -->
+    <!-- Download section -->
         {% if result and result.enriched_blob_url %}
             <form method="get" action="{{ download_url }}">
                 <input type="hidden" name="blob_url" value="{{ result.enriched_blob_url }}">
