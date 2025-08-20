@@ -107,5 +107,9 @@ def download():
         flash(f"Download error: {str(e)}")
         return redirect(url_for("index"))
 
+@app.route("/test")
+def test():
+    return "<h1>Hello, Flask UI is working!</h1>"
+
 if __name__ == "__main__":
     app.run(debug=True)

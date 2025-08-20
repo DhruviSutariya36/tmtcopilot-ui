@@ -1,58 +1,118 @@
+<!doctype html>
+<html>
+<head>
+    <title>Threat Modelling Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f6fa; }
+        .container { max-width: 600px; margin: 50px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h2 { text-align: center; margin-bottom: 20px; color: #2f3640; }
+        label { display: block; margin-top: 15px; font-weight: 600; }
+        input[type="file"], select, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #dcdde1; }
+        button { margin-top: 20px; padding: 10px 20px; background: #3498db; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        .spinner-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.7); z-index: 1000; justify-content:center; align-items:center; }
+        .spinner { border: 8px solid #f3f3f3; border-top: 8px solid #3498db; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .alert-success { color: green; font-weight: bold; margin-top: 20px; text-align: center; }
+        .flash-error { color: red; margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-error">
+                {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <h2>Threat Modelling Tool</h2>
+
+    <form id="uploadForm" method="POST" enctype="multipart/form-data">
+        <label for="category">Compliance:</label>
+        <select name="category" required>
+            <option value="">-- Choose --</option>
+            <option value="OWASP">OWASP</option>
+        </select>
+
+        <label for="description">System Description:</label>
+        <textarea name="description" required></textarea>
+
+        <label for="file">Upload CSV:</label>
+        <input type="file" name="file" accept=".csv" required>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="resultSection" style="display:none;">
+        <div class="alert-success">File enriched successfully!</div>
+        <form id="downloadForm" method="get" action="{{ url_for('download') }}">
+            <input type="hidden" name="blob_url" id="blob_url">
+            <input type="hidden" name="filename" id="filename">
+            <button type="submit">Download CSV</button>
+        </form>
+    </div>
+</div>
+
+<div class="spinner-overlay" id="spinner-overlay">
+    <div class="spinner"></div>
+</div>
+
 <script>
-    const form = document.getElementById("uploadForm");
-    const spinner = document.getElementById("spinner-overlay");
-    const resultSection = document.getElementById("resultSection");
-    const blobInput = document.getElementById("blob_url");
-    const filenameInput = document.getElementById("filename");
-    
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        spinner.style.display = "flex";
-    
-        const formData = new FormData(form);
-    
-        try {
-            // POST to Flask route (which calls Durable Function)
-            const starterResp = await fetch("{{ url_for('index') }}", {
-                method: "POST",
-                body: formData
-            });
-            if (!starterResp.ok) throw new Error("Failed to start enrichment");
-    
-            const starterData = await starterResp.json();
-            let statusUrl = starterData.statusQueryGetUri;
-            if (!statusUrl) throw new Error("No status URL returned");
-    
-            // Poll every 10 seconds
-            let enrichmentCompleted = false;
-            while (!enrichmentCompleted) {
-                const statusResp = await fetch(statusUrl);
-                const statusData = await statusResp.json();
-                const runtimeStatus = statusData.runtimeStatus;
-                console.log("Orchestration status:", runtimeStatus);
-    
-                if (runtimeStatus === "Completed") {
-                    enrichmentCompleted = true;
-                    const output = statusData.output || {};
-                    blobInput.value = output.enriched_blob_url;
-                    // Set filename to "enriched_" + original filename
-                    filenameInput.value = "enriched_" + formData.get("file").name;
-                    spinner.style.display = "none";
-                    resultSection.style.display = "block";
-                } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
-                    enrichmentCompleted = true;
-                    spinner.style.display = "none";
-                    alert("Durable Function failed: " + runtimeStatus);
-                } else {
-                    await new Promise(resolve => setTimeout(resolve, 10000)); // 10s delay
-                }
+const form = document.getElementById("uploadForm");
+const spinner = document.getElementById("spinner-overlay");
+const resultSection = document.getElementById("resultSection");
+const blobInput = document.getElementById("blob_url");
+const filenameInput = document.getElementById("filename");
+
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    spinner.style.display = "flex";
+
+    const formData = new FormData(form);
+
+    try {
+        // POST to Flask API
+        const starterResp = await fetch("/", { method: "POST", body: formData });
+        if (!starterResp.ok) throw new Error("Failed to start enrichment");
+
+        const starterData = await starterResp.json();
+        let statusUrl = starterData.statusQueryGetUri;
+        if (!statusUrl) throw new Error("No status URL returned");
+
+        // Poll every 10 seconds
+        let enrichmentCompleted = false;
+        while (!enrichmentCompleted) {
+            const statusResp = await fetch(statusUrl);
+            const statusData = await statusResp.json();
+            const runtimeStatus = statusData.runtimeStatus;
+            console.log("Orchestration status:", runtimeStatus);
+
+            if (runtimeStatus === "Completed") {
+                enrichmentCompleted = true;
+                const output = statusData.output || {};
+                blobInput.value = output.enriched_blob_url;
+                filenameInput.value = "enriched_" + formData.get("file").name;
+                spinner.style.display = "none";
+                resultSection.style.display = "block";
+            } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
+                enrichmentCompleted = true;
+                spinner.style.display = "none";
+                alert("Durable Function failed: " + runtimeStatus);
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 10000));
             }
-    
-        } catch (err) {
-            spinner.style.display = "none";
-            alert("Error: " + err.message);
-            console.error(err);
         }
-    });
-    </script>
-    
+
+    } catch (err) {
+        spinner.style.display = "none";
+        alert("Error: " + err.message);
+        console.error(err);
+    }
+});
+</script>
+</body>
+</html>
