@@ -40,8 +40,8 @@
         <h2>Threat Modelling Tool</h2>
 
         <!-- Upload form -->
-        <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" onsubmit="showSpinner()">
-           <label for="category">Compliance:</label>
+        <form method="POST" action="{{ url_for('index') }}" enctype="multipart/form-data" onsubmit="showSpinner()">
+            <label for="category">Compliance:</label>
             <select name="category" required>
                 <option value="">-- Choose --</option>
                 <option value="OWASP">OWASP</option>
