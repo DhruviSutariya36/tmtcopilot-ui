@@ -77,7 +77,6 @@ def index():
 
     return render_template("form.html")
 
-
 @app.route("/download", methods=["GET"])
 def download():
     blob_url = request.args.get("blob_url")
