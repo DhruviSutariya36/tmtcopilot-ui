@@ -62,61 +62,68 @@
 </div>
 
 <script>
-const DURABLE_STARTER_URL = "{{ DURABLE_STARTER_URL }}"; // Azure Function /process
-const form = document.getElementById("uploadForm");
-const spinner = document.getElementById("spinner-overlay");
-const resultSection = document.getElementById("resultSection");
-const blobInput = document.getElementById("blob_url");
-const filenameInput = document.getElementById("filename");
-
-form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    spinner.style.display = "flex";
-
-    const formData = new FormData(form);
-
-    try {
-        // POST directly to Durable Function
-        const starterResp = await fetch(DURABLE_STARTER_URL, { method: "POST", body: formData });
-        if (!starterResp.ok) {
-            const text = await starterResp.text();
-            throw new Error("Failed to start enrichment: " + text);
-        }
-
-        const starterData = await starterResp.json();
-        let statusUrl = starterData.statusQueryGetUri;
-        if (!statusUrl) throw new Error("No status URL returned");
-
-        // Poll every 10 seconds
-        let enrichmentCompleted = false;
-        while (!enrichmentCompleted) {
-            const statusResp = await fetch(statusUrl);
-            const statusData = await statusResp.json();
-            const runtimeStatus = statusData.runtimeStatus;
-            console.log("Orchestration status:", runtimeStatus);
-
-            if (runtimeStatus === "Completed") {
-                enrichmentCompleted = true;
-                const output = statusData.output || {};
-                blobInput.value = output.enriched_blob_url;
-                filenameInput.value = "enriched_" + formData.get("file").name;
-                spinner.style.display = "none";
-                resultSection.style.display = "block";
-            } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
-                enrichmentCompleted = true;
-                spinner.style.display = "none";
-                alert("Durable Function failed: " + runtimeStatus);
-            } else {
-                await new Promise(resolve => setTimeout(resolve, 10000));
+    const form = document.getElementById("uploadForm");
+    const spinner = document.getElementById("spinner-overlay");
+    const resultSection = document.getElementById("resultSection");
+    const blobInput = document.getElementById("blob_url");
+    const filenameInput = document.getElementById("filename");
+    
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        spinner.style.display = "flex";
+    
+        const formData = new FormData(form);
+    
+        try {
+            // POST to Durable Function starter
+            const starterResp = await fetch("{{ DURABLE_STARTER_URL }}", { 
+                method: "POST", 
+                body: formData 
+            });
+    
+            // Parse JSON even if status is 202
+            let starterData;
+            try {
+                starterData = await starterResp.json();
+            } catch (err) {
+                const text = await starterResp.text();
+                throw new Error("Failed to start enrichment: " + text);
             }
+    
+            const statusUrl = starterData.statusQueryGetUri;
+            if (!statusUrl) throw new Error("No status URL returned from Durable Function.");
+    
+            // Poll every 10 seconds
+            let enrichmentCompleted = false;
+            while (!enrichmentCompleted) {
+                const statusResp = await fetch(statusUrl);
+                const statusData = await statusResp.json();
+                const runtimeStatus = statusData.runtimeStatus;
+                console.log("Orchestration status:", runtimeStatus);
+    
+                if (runtimeStatus === "Completed") {
+                    enrichmentCompleted = true;
+                    const output = statusData.output || {};
+                    blobInput.value = output.enriched_blob_url;
+                    filenameInput.value = "enriched_" + formData.get("file").name;
+                    spinner.style.display = "none";
+                    resultSection.style.display = "block";
+                } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
+                    enrichmentCompleted = true;
+                    spinner.style.display = "none";
+                    alert("Durable Function failed: " + runtimeStatus);
+                } else {
+                    // wait 10 seconds before polling again
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+                }
+            }
+    
+        } catch (err) {
+            spinner.style.display = "none";
+            alert("Error: " + err.message);
+            console.error(err);
         }
-
-    } catch (err) {
-        spinner.style.display = "none";
-        alert("Error: " + err.message);
-        console.error(err);
-    }
-});
-</script>
+    });
+    </script>
 </body>
 </html>
