@@ -31,7 +31,7 @@
 
     <h2>Threat Modelling Tool</h2>
 
-    <form id="uploadForm" method="POST" enctype="multipart/form-data">
+    <form id="uploadForm" enctype="multipart/form-data">
         <label for="category">Compliance:</label>
         <select name="category" required>
             <option value="">-- Choose --</option>
@@ -49,7 +49,7 @@
 
     <div id="resultSection" style="display:none;">
         <div class="alert-success">File enriched successfully!</div>
-        <form id="downloadForm" method="get" action="{{ url_for('download') }}">
+        <form id="downloadForm" method="get" action="{{ AZURE_DOWNLOAD_FUNCTION_URL }}">
             <input type="hidden" name="blob_url" id="blob_url">
             <input type="hidden" name="filename" id="filename">
             <button type="submit">Download CSV</button>
@@ -62,6 +62,7 @@
 </div>
 
 <script>
+const DURABLE_STARTER_URL = "{{ DURABLE_STARTER_URL }}"; // Azure Function /process
 const form = document.getElementById("uploadForm");
 const spinner = document.getElementById("spinner-overlay");
 const resultSection = document.getElementById("resultSection");
@@ -75,9 +76,12 @@ form.addEventListener("submit", async (e) => {
     const formData = new FormData(form);
 
     try {
-        // POST to Flask API
-        const starterResp = await fetch("/", { method: "POST", body: formData });
-        if (!starterResp.ok) throw new Error("Failed to start enrichment");
+        // POST directly to Durable Function
+        const starterResp = await fetch(DURABLE_STARTER_URL, { method: "POST", body: formData });
+        if (!starterResp.ok) {
+            const text = await starterResp.text();
+            throw new Error("Failed to start enrichment: " + text);
+        }
 
         const starterData = await starterResp.json();
         let statusUrl = starterData.statusQueryGetUri;
