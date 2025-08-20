@@ -4,10 +4,10 @@ import logging
 import requests
 from flask import Flask, render_template, request, flash, redirect, url_for
 from werkzeug.utils import secure_filename
-from config import Config
+from config import AZURE_DOWNLOAD_FUNCTION_URL, DURABLE_STARTER_URL
 
 app = Flask(__name__)
-app.config.from_object(Config)
+app.config
 
 ALLOWED_EXTENSIONS = {"csv"}
 
@@ -37,7 +37,7 @@ def index():
             data = {"category": category, "description": description}
 
             logging.info("Sending file to Durable Function starter...")
-            response = requests.post(app.config["PARSE_FUNCTION_URL"], files=files, data=data)
+            response = requests.post(DURABLE_STARTER_URL, files=files, data=data)
             if response.status_code != 202:
                 flash(f"Azure Function error: {response.text}")
                 return redirect(url_for("index"))
@@ -88,7 +88,7 @@ def download():
 
     try:
         response = requests.get(
-            app.config["AZURE_DOWNLOAD_FUNCTION_URL"],
+            AZURE_DOWNLOAD_FUNCTION_URL,
             params={"blob_url": blob_url, "filename": filename}
         )
         if response.status_code == 200:
