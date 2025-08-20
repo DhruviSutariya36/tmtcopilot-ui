@@ -6,65 +6,58 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: #f4f6f8;
-        }
-        .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
-            width: 400px;
+            background-color: #f9f9f9;
+            padding: 20px;
             text-align: center;
         }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 1rem;
+
+        .spinner-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
         }
-        .btn-primary {
-            background: #0078d7;
-            color: white;
+        .spinner {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 60px; height: 60px;
+            margin: -30px 0 0 -30px;
+            border: 6px solid #ccc;
+            border-top-color: #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
-        .btn-primary:hover {
-            background: #005a9e;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-        .message {
-            margin-top: 1rem;
-            color: #333;
-        }
-        .error {
-            color: red;
-            margin-top: 1rem;
+
+        .result-section {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <h2>Upload CSV</h2>
-    <form method="POST" enctype="multipart/form-data">
+    <h1>Upload CSV for Processing</h1>
+    <form id="upload-form" method="post" enctype="multipart/form-data">
         <input type="file" name="file" required><br><br>
-        <input type="text" name="system_desc" placeholder="System Description" required><br><br>
-        <input type="text" name="compliance" placeholder="Compliance Category" required><br><br>
-        <button type="submit" class="btn btn-primary">Upload</button>
+        <input type="text" name="system_description" placeholder="System Description"><br><br>
+        <input type="text" name="compliance" placeholder="Compliance Category"><br><br>
+        <button type="submit">Upload</button>
     </form>
 
-    {% if status_url %}
-        <div class="message">
-            <p>Processing started. Click below to check progress:</p>
-            <a href="{{ url_for('check_status') }}?status_url={{ status_url }}" class="btn btn-primary">Check Status</a>
-        </div>
-    {% endif %}
+    <!-- Spinner overlay -->
+    <div class="spinner-overlay" id="spinner-overlay">
+        <div class="spinner"></div>
+    </div>
 
-    <!-- Download section -->
+    <!-- Results -->
+    <div id="result-section" class="result-section">
         {% if result and result.enriched_blob_url %}
-            <form method="get" action="{{ download_url }}">
+            <form method="get" action="/download">
                 <input type="hidden" name="blob_url" value="{{ result.enriched_blob_url }}">
+                <input type="hidden" name="filename" value="enriched.csv">
                 <button type="submit">Download CSV</button>
             </form>
         {% elif result %}
@@ -72,9 +65,47 @@
         {% endif %}
     </div>
 
-    <!-- Full screen spinner overlay -->
-    <div class="spinner-overlay" id="spinner-overlay">
-        <div class="spinner"></div>
-    </div>
+    <script>
+        const form = document.getElementById("upload-form");
+        const spinnerOverlay = document.getElementById("spinner-overlay");
+        const resultSection = document.getElementById("result-section");
+
+        form.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            spinnerOverlay.style.display = "block"; // show spinner
+            resultSection.innerHTML = "";
+
+            const formData = new FormData(form);
+            const response = await fetch("/process", { method: "POST", body: formData });
+            const statusUrls = await response.json();
+
+            // Poll durable function status
+            async function pollStatus() {
+                const statusResponse = await fetch(statusUrls.statusQueryGetUri);
+                const status = await statusResponse.json();
+
+                if (status.runtimeStatus === "Completed") {
+                    spinnerOverlay.style.display = "none";
+
+                    if (status.output && status.output.enriched_blob_url) {
+                        resultSection.innerHTML = `
+                            <form method="get" action="/download">
+                                <input type="hidden" name="blob_url" value="${status.output.enriched_blob_url}">
+                                <button type="submit">Download CSV</button>
+                            </form>`;
+                    } else {
+                        resultSection.innerHTML = `<p style="color:red;">Blob URL not available for download.</p>`;
+                    }
+                } else if (status.runtimeStatus === "Failed" || status.runtimeStatus === "Terminated") {
+                    spinnerOverlay.style.display = "none";
+                    resultSection.innerHTML = `<p style="color:red;">Process failed: ${status.output}</p>`;
+                } else {
+                    setTimeout(pollStatus, 3000); // keep polling
+                }
+            }
+            pollStatus();
+        });
+    </script>
 </body>
 </html>
+
