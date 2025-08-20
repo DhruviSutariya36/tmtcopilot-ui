@@ -77,6 +77,10 @@ def index():
 
     return render_template("form.html")
 
+from flask import send_file, Response
+import requests
+import io
+
 @app.route("/download", methods=["GET"])
 def download():
     blob_url = request.args.get("blob_url")
@@ -86,22 +90,22 @@ def download():
         return redirect(url_for("index"))
 
     try:
-        response = requests.get(
-            AZURE_DOWNLOAD_FUNCTION_URL,
-            params={"blob_url": blob_url, "filename": filename}
-        )
-        if response.status_code == 200:
-            return response.content, 200, {
-                "Content-Disposition": f"attachment; filename={filename}",
-                "Content-Type": "text/csv"
-            }
-        else:
-            flash(f"Download failed: {response.text}")
+        # Directly fetch blob content
+        resp = requests.get(blob_url)
+        if resp.status_code != 200:
+            flash(f"Failed to download file from blob: {resp.status_code}")
             return redirect(url_for("index"))
+
+        # Return as downloadable response
+        return Response(
+            resp.content,
+            mimetype="text/csv",
+            headers={"Content-Disposition": f"attachment;filename={filename}"}
+        )
+
     except Exception as e:
         flash(f"Download error: {str(e)}")
         return redirect(url_for("index"))
-
 
 if __name__ == "__main__":
     app.run(debug=True)
