@@ -75,31 +75,23 @@
         const formData = new FormData(form);
     
         try {
-            // POST to Durable Function starter
-            const starterResp = await fetch("{{ DURABLE_STARTER_URL }}", { 
-                method: "POST", 
-                body: formData 
-            });
-    
-            // Parse JSON even if status is 202
-            let starterData;
-            try {
-                starterData = await starterResp.json();
-            } catch (err) {
-                const text = await starterResp.text();
-                throw new Error("Failed to start enrichment: " + text);
+            // POST to Flask backend
+            const starterResp = await fetch("/", { method: "POST", body: formData });
+            if (!starterResp.ok) {
+                const errText = await starterResp.text();
+                throw new Error(errText);
             }
     
+            const starterData = await starterResp.json();
             const statusUrl = starterData.statusQueryGetUri;
-            if (!statusUrl) throw new Error("No status URL returned from Durable Function.");
+            if (!statusUrl) throw new Error("No status URL returned");
     
-            // Poll every 10 seconds
+            // Poll Durable Function
             let enrichmentCompleted = false;
             while (!enrichmentCompleted) {
                 const statusResp = await fetch(statusUrl);
                 const statusData = await statusResp.json();
                 const runtimeStatus = statusData.runtimeStatus;
-                console.log("Orchestration status:", runtimeStatus);
     
                 if (runtimeStatus === "Completed") {
                     enrichmentCompleted = true;
@@ -113,7 +105,6 @@
                     spinner.style.display = "none";
                     alert("Durable Function failed: " + runtimeStatus);
                 } else {
-                    // wait 10 seconds before polling again
                     await new Promise(resolve => setTimeout(resolve, 10000));
                 }
             }
@@ -125,5 +116,6 @@
         }
     });
     </script>
+    
 </body>
 </html>
