@@ -1,121 +1,554 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Threat Modelling Tool</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threat Modelling Tool Co-Pilot</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f6fa; }
-        .container { max-width: 600px; margin: 50px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h2 { text-align: center; margin-bottom: 20px; color: #2f3640; }
-        label { display: block; margin-top: 15px; font-weight: 600; }
-        input[type="file"], select, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #dcdde1; }
-        button { margin-top: 20px; padding: 10px 20px; background: #3498db; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #2980b9; }
-        .spinner-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.7); z-index: 1000; justify-content:center; align-items:center; }
-        .spinner { border: 8px solid #f3f3f3; border-top: 8px solid #3498db; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .alert-success { color: green; font-weight: bold; margin-top: 20px; text-align: center; }
-        .flash-error { color: red; margin-top: 20px; text-align: center; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a4c 0%, #2c3e50 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* Header Banner */
+        .header {
+    width: 100%;
+    background: #000; /* black background */
+    color: white;
+    padding: 10px 25px; /* smaller padding to fit logo height */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+        
+.header-content {
+    max-width: 1200px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+        
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.banner-logo {
+    height: 200px; 
+    width: auto;  
+}
+        
+        .logo {
+            height: 60px;
+            width: 60px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .logo i {
+            font-size: 28px;
+            color: #1a5fce;
+        }
+        
+        .header-title {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        
+        .header-subtitle {
+            font-size: 18px;
+            font-weight: 300;
+            max-width: 600px;
+            opacity: 0.9;
+        }
+        
+        /* Main Content */
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background: linear-gradient(90deg, #2c73b9 0%, #1a5fce 100%);
+            color: white;
+            padding: 20px 30px;
+        }
+        
+        .card-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .card-subtitle {
+            font-size: 15px;
+            opacity: 0.9;
+        }
+        
+        .card-body {
+            padding: 30px;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        
+        .form-label i {
+            margin-right: 8px;
+            color: #2c73b9;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #2c73b9;
+            box-shadow: 0 0 0 3px rgba(44, 115, 185, 0.2);
+            outline: none;
+        }
+        
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .file-input-container {
+            position: relative;
+        }
+        
+        .file-input-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            border: 2px dashed #cbd6e0;
+            border-radius: 10px;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .file-input-label:hover {
+            border-color: #2c73b9;
+            background: #f0f7ff;
+        }
+        
+        .file-input-label i {
+            font-size: 42px;
+            color: #2c73b9;
+            margin-bottom: 15px;
+        }
+        
+        .file-input-text {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .file-input-subtext {
+            color: #7b8a9b;
+            font-size: 14px;
+        }
+        
+        input[type="file"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #2c73b9 0%, #1a5fce 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(44, 115, 185, 0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(44, 115, 185, 0.3);
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        /* Feedback Elements */
+        .spinner-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #2c73b9;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .spinner-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .alert-success {
+            padding: 20px;
+            background: #e7f4e4;
+            color: #2e7d32;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+            border-left: 5px solid #2e7d32;
+        }
+        
+        .alert-success i {
+            margin-right: 10px;
+        }
+        
+        .download-section {
+            margin-top: 25px;
+            padding: 25px;
+            background: #f0f7ff;
+            border-radius: 10px;
+            border: 1px dashed #2c73b9;
+            text-align: center;
+            display: none;
+        }
+        
+        .download-title {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .btn-download {
+            background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        .btn-download:hover {
+            box-shadow: 0 6px 12px rgba(46, 204, 113, 0.3);
+        }
+        
+        /* Footer */
+        .footer {
+            width: 100%;
+            background: #1a2a4c;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-top: auto;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .footer-text {
+            opacity: 0.8;
+            font-size: 14px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                margin: 20px auto;
+            }
+            
+            .card-body {
+                padding: 20px;
+            }
+            
+            .header-title {
+                font-size: 26px;
+            }
+            
+            .header-subtitle {
+                font-size: 16px;
+                padding: 0 15px;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="flash-error">
-                {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+    <!-- Header Banner -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='images/logo_e.jpg') }}" alt="Logo" class="banner-logo">
+                <h1 class="header-title">Threat Modelling Tool Co-Pilot</h1>
             </div>
-        {% endif %}
-    {% endwith %}
+        </div>
+    </header>
 
-    <h2>Threat Modelling Tool</h2>
-
-    <form id="uploadForm" enctype="multipart/form-data">
-        <label for="category">Compliance:</label>
-        <select name="category" required>
-            <option value="">-- Choose --</option>
-            <option value="OWASP">OWASP</option>
-        </select>
-
-        <label for="description">System Description:</label>
-        <textarea name="description" required></textarea>
-
-        <label for="file">Upload CSV:</label>
-        <input type="file" name="file" accept=".csv" required>
-
-        <button type="submit">Submit</button>
-    </form>
-
-    <div id="resultSection" style="display:none;">
-        <div class="alert-success">File enriched successfully!</div>
-        <form id="downloadForm" method="get" action="{{ AZURE_DOWNLOAD_FUNCTION_URL }}">
-            <input type="hidden" name="blob_url" id="blob_url">
-            <input type="hidden" name="filename" id="filename">
-            <button type="submit">Download CSV</button>
-        </form>
+    <!-- Main Content -->
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"> Threat modelling tool</h2>
+                <p class="card-subtitle">Upload your system details to generate enriched csv file</p>
+            </div>
+            
+            <div class="card-body">
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label for="category" class="form-label">
+                            <i class="fas fa-list-alt"></i>Compliance Framework
+                        </label>
+                        <select id="category" name="category" class="form-control" required>
+                            <option value="">-- Choose Compliance Standard --</option>
+                            <option value="OWASP">OWASP Application Security</option>
+                            
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description" class="form-label">
+                            <i class="fas fa-align-left"></i>System Description
+                        </label>
+                        <textarea id="description" name="description" class="form-control" placeholder="Describe your system architecture, components, data flows, and security requirements..." required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-file-csv"></i>Upload CSV File
+                        </label>
+                        <div class="file-input-container">
+                            <label for="file" class="file-input-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span class="file-input-text">Click to browse or drag & drop your CSV file</span>
+                                <span class="file-input-subtext">Maximum file size: 10MB</span>
+                            </label>
+                            <input type="file" id="file" name="file" accept=".csv" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn">
+                        <i class="fas fa-bolt"></i>Analyze File
+                    </button>
+                </form>
+                
+                <div class="alert-success" id="successMessage">
+                    <i class="fas fa-check-circle"></i>File enriched successfully! You can now download the enriched CSV  report.
+                </div>
+                
+                <div class="download-section" id="downloadSection">
+                    <h3 class="download-title">Your Enriched CSV is Ready</h3>
+                    <form id="downloadForm" method="get" target="_blank" action="/download">
+                        <input type="hidden" name="blob_url" id="blob_url">
+                        <input type="hidden" name="filename" id="filename">
+                        <button type="submit" class="btn btn-download">
+                            <i class="fas fa-download"></i>Download CSV Report
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+    
+    <!-- Spinner Overlay -->
+    <div class="spinner-overlay" id="spinner-overlay">
+        <div class="spinner"></div>
+        <p class="spinner-text">Analyzing your system. This may take a moment...</p>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p class="footer-text">© 2025 Threat Modelling Tool | eInfochips</p>
+        </div>
+    </footer>
 
-<div class="spinner-overlay" id="spinner-overlay">
-    <div class="spinner"></div>
-</div>
+    <script>
+        const form = document.getElementById("uploadForm");
+        const spinner = document.getElementById("spinner-overlay");
+        const successMessage = document.getElementById("successMessage");
+        const downloadSection = document.getElementById("downloadSection");
+        const blobInput = document.getElementById("blob_url");
+        const filenameInput = document.getElementById("filename");
+        const fileInput = document.getElementById("file");
 
-<script>
-    const form = document.getElementById("uploadForm");
-    const spinner = document.getElementById("spinner-overlay");
-    const resultSection = document.getElementById("resultSection");
-    const blobInput = document.getElementById("blob_url");
-    const filenameInput = document.getElementById("filename");
-    
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        spinner.style.display = "flex";
-    
-        const formData = new FormData(form);
-    
-        try {
-            // POST to Flask backend
-            const starterResp = await fetch("/", { method: "POST", body: formData });
-            if (!starterResp.ok) {
-                const errText = await starterResp.text();
-                throw new Error(errText);
-            }
-    
-            const starterData = await starterResp.json();
-            const statusUrl = starterData.statusQueryGetUri;
-            if (!statusUrl) throw new Error("No status URL returned");
-    
-            // Poll Durable Function
-            let enrichmentCompleted = false;
-            while (!enrichmentCompleted) {
-                const statusResp = await fetch(statusUrl);
-                const statusData = await statusResp.json();
-                const runtimeStatus = statusData.runtimeStatus;
-    
-                if (runtimeStatus === "Completed") {
-                    enrichmentCompleted = true;
-                    const output = statusData.output || {};
-                    blobInput.value = output.enriched_blob_url;
-                    filenameInput.value = "enriched_" + formData.get("file").name;
-                    spinner.style.display = "none";
-                    resultSection.style.display = "block";
-                } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
-                    enrichmentCompleted = true;
-                    spinner.style.display = "none";
-                    alert("Durable Function failed: " + runtimeStatus);
-                } else {
-                    await new Promise(resolve => setTimeout(resolve, 10000));
-                }
-            }
-    
-        } catch (err) {
-            spinner.style.display = "none";
-            alert("Error: " + err.message);
-            console.error(err);
+        // Drag and drop functionality
+        const fileInputLabel = document.querySelector('.file-input-label');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileInputLabel.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
         }
-    });
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileInputLabel.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileInputLabel.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            fileInputLabel.style.borderColor = '#2c73b9';
+            fileInputLabel.style.backgroundColor = '#e0f0ff';
+        }
+        
+        function unhighlight() {
+            fileInputLabel.style.borderColor = '#cbd6e0';
+            fileInputLabel.style.backgroundColor = '#f8fafc';
+        }
+        
+        fileInputLabel.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            
+            // Update the label text
+            if (files.length > 0) {
+                document.querySelector('.file-input-text').textContent = files[0].name;
+                document.querySelector('.file-input-subtext').textContent = 
+                    'File selected: ' + (files[0].size / 1024 / 1024).toFixed(2) + 'MB';
+            }
+        }
+
+        // File input change event
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                document.querySelector('.file-input-text').textContent = this.files[0].name;
+                document.querySelector('.file-input-subtext').textContent = 
+                    'File selected: ' + (this.files[0].size / 1024 / 1024).toFixed(2) + 'MB';
+            }
+        });
+
+        // Form submission
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            spinner.style.display = "flex";
+            successMessage.style.display = "none";
+            downloadSection.style.display = "none";
+
+            const formData = new FormData(form);
+            const fileField = form.querySelector('input[name="file"]');
+            const originalName = fileField.files[0]?.name || "download.csv";
+            const enrichedName = "threat_analysis_" + originalName.replace(/ /g, "_");
+
+            try {
+                
+                setTimeout(async () => {
+                    const resp = await fetch("/", { method: "POST", body: formData });
+                    const data = await resp.json();
+
+                    if (!resp.ok || !data.enriched_blob_url) {
+                        alert(data.error || "Failed to enrich file");
+                        spinner.style.display = "none";
+                        return;
+                    }
+
+                    if (!resp.ok || !data.enriched_blob_url) {
+                        alert(data.error || "Failed to Analyze File");
+                        spinner.style.display = "none";
+                        return;
+                    }
+
+                    blobInput.value = data.enriched_blob_url;
+                    filenameInput.value = enrichedName;
+
+                    spinner.style.display = "none";
+                    successMessage.style.display = "block";
+                    downloadSection.style.display = "block";
+                }, 2500);
+
+            } catch (err) {
+                console.error(err);
+                alert("An error occurred while processing the file.");
+                spinner.style.display = "none";
+            }
+        });
     </script>
-    
 </body>
 </html>

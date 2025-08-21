@@ -1,84 +1,125 @@
-import os
+from io import BytesIO
 import time
+import os
 import logging
 import requests
-from flask import Flask, jsonify, render_template, request, flash, redirect, url_for
-from werkzeug.utils import secure_filename
-from config import AZURE_DOWNLOAD_FUNCTION_URL, DURABLE_STARTER_URL
+import math
+from flask import Flask, request, jsonify, render_template, send_file
+
+from config import AZURE_DOWNLOAD_FUNCTION_URL
 
 app = Flask(__name__)
-app.config
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key")
 
-ALLOWED_EXTENSIONS = {"csv"}
-
-# Setup logger
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+DURABLE_STARTER_URL = os.getenv(
+    "PARSE_FUNCTION_URL",
+    "https://dev-tmtcopilot-func-bedma3g8buhnczbj.centralindia-01.azurewebsites.net/api/process"
+)
+
+# ----------------------
+# Helper: sanitize JSON
+# ----------------------
+def sanitize_json(obj):
+    if isinstance(obj, dict):
+        return {k: sanitize_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_json(v) for v in obj]
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    elif isinstance(obj, (int, str, bool)) or obj is None:
+        return obj
+    else:
+        try:
+            f = float(obj)
+            return f if math.isfinite(f) else None
+        except:
+            return str(obj)
+
+@app.route("/", methods=["GET"])
+def upload_page():
+    return render_template("form.html")
+
 
 @app.route("/", methods=["POST"])
 def start_enrichment():
-    file = request.files.get("file")
-    category = request.form.get("category")
-    description = request.form.get("description")
-
-    if not file or not category or not description:
-        return jsonify({"error": "All fields are required"}), 400
-
-    if not allowed_file(file.filename):
-        return jsonify({"error": "Only CSV files are allowed"}), 400
-
     try:
-        files = {"file": (secure_filename(file.filename), file.stream, "text/csv")}
-        data = {"category": category, "description": description}
+        file = request.files.get("file")
+        if not file:
+            return jsonify({"error": "Missing file"}), 400
 
-        # Call Durable Function starter
-        response = requests.post(DURABLE_STARTER_URL, files=files, data=data)
+        files = {"file": (file.filename, file.stream, file.mimetype)}
+        logging.info(f"Sending file {file.filename} to Durable Function")
 
-        if response.status_code != 202:
-            return jsonify({"error": response.text}), response.status_code
+        resp = requests.post(DURABLE_STARTER_URL, files=files, timeout=10)
+        resp.raise_for_status()
+        resp_json = sanitize_json(resp.json())
 
-        # Return JSON as-is
-        return jsonify(response.json()), 202
+        if resp.status_code != 202:
+            return jsonify({"error": "Failed to start enrichment"}), 500
+
+        instance_id = resp_json.get("instanceId")
+        status_url = resp_json.get("statusQueryGetUri")
+        if not status_url:
+            return jsonify({"error": "No status URL returned by Durable Function"}), 500
+
+        logging.info(f"Durable Function started successfully, status URL: {status_url}")
+
+        # Poll until orchestration completes
+        enriched_blob_url = poll_for_completion(status_url)
+        if not enriched_blob_url:
+            return jsonify({"error": "Processing failed or timed out"}), 500
+
+        return jsonify({"enriched_blob_url": enriched_blob_url})
 
     except Exception as e:
-        logging.error(f"Error starting enrichment: {e}", exc_info=True)
+        logging.exception("Error in start_enrichment")
         return jsonify({"error": str(e)}), 500
 
-from flask import send_file, Response
-import requests
-import io
+
+def poll_for_completion(status_url, timeout=300, interval=5):
+    """Poll Durable Function until Completed, Failed, or Terminated."""
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            response = requests.get(status_url)
+            response.raise_for_status()
+            status_data = response.json()
+            runtime_status = status_data.get("runtimeStatus", "")
+            if runtime_status in ["Completed", "Failed", "Terminated"]:
+                if runtime_status == "Completed":
+                    output = status_data.get("output")
+                    if isinstance(output, str):
+                        import json
+                        output = json.loads(output)
+                    return output.get("enriched_blob_url")
+                return None
+        except Exception as e:
+            logging.error(f"Failed to fetch status: {e}")
+            return None
+        time.sleep(interval)
+    logging.error("Polling timed out")
+    return None
 
 @app.route("/download", methods=["GET"])
-def download():
+def download_csv():
     blob_url = request.args.get("blob_url")
-    filename = request.args.get("filename")
-    if not blob_url or not filename:
-        flash("Missing blob URL or filename for download.")
-        return redirect(url_for("index"))
+    filename = request.args.get("filename", "download.csv")
+    if not blob_url:
+        return "Missing blob_url parameter", 400
 
     try:
-        # Directly fetch blob content
-        resp = requests.get(blob_url)
-        if resp.status_code != 200:
-            flash(f"Failed to download file from blob: {resp.status_code}")
-            return redirect(url_for("index"))
-
-        # Return as downloadable response
-        return Response(
-            resp.content,
-            mimetype="text/csv",
-            headers={"Content-Disposition": f"attachment;filename={filename}"}
-        )
-
+        # Pass raw URL to Azure Function to avoid double encoding
+        download_url = f"{AZURE_DOWNLOAD_FUNCTION_URL}?blob_url={blob_url}&filename={filename}"
+        resp = requests.get(download_url, stream=True)
+        resp.raise_for_status()
+        return send_file(BytesIO(resp.content), as_attachment=True, download_name=filename, mimetype="text/csv")
     except Exception as e:
-        flash(f"Download error: {str(e)}")
-        return redirect(url_for("index"))
-
-@app.route("/test")
-def test():
-    return "<h1>Hello, Flask UI is working!</h1>"
-
+        logging.exception("Failed to download file")
+        return f"Failed to download file: {e}", 500
+    
 if __name__ == "__main__":
     app.run(debug=True)

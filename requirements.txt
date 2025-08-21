@@ -4,4 +4,4 @@ Werkzeug==2.3.7
 gunicorn
 azure-storage-blob==12.19.1
 python-dotenv==1.0.1
-
+requests_toolbelt
