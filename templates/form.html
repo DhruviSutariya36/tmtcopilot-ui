@@ -432,7 +432,7 @@
     <!-- Spinner Overlay -->
     <div class="spinner-overlay" id="spinner-overlay">
         <div class="spinner"></div>
-        <p class="spinner-text">Analyzing your system. This may take a moment...</p>
+        <p class="spinner-text">Analyzing your CSV. This may take a moment...</p>
     </div>
     
     <!-- Footer -->
@@ -512,6 +512,8 @@
             successMessage.style.display = "none";
             downloadSection.style.display = "none";
 
+            const startTime = Date.now(); 
+
             const formData = new FormData(form);
             const fileField = form.querySelector('input[name="file"]');
             const originalName = fileField.files[0]?.name || "download.csv";
@@ -519,7 +521,7 @@
 
             try {
                 
-                setTimeout(async () => {
+                
                     const resp = await fetch("/", { method: "POST", body: formData });
                     const data = await resp.json();
 
@@ -529,11 +531,9 @@
                         return;
                     }
 
-                    if (!resp.ok || !data.enriched_blob_url) {
-                        alert(data.error || "Failed to Analyze File");
-                        spinner.style.display = "none";
-                        return;
-                    }
+                   // Calculate time taken
+                    const endTime = Date.now();
+                    const timeTakenSeconds = ((endTime - startTime) / 1000).toFixed(2);
 
                     blobInput.value = data.enriched_blob_url;
                     filenameInput.value = enrichedName;
@@ -541,7 +541,14 @@
                     spinner.style.display = "none";
                     successMessage.style.display = "block";
                     downloadSection.style.display = "block";
-                }, 2500);
+
+                    // Show time taken in the success message
+                    successMessage.innerHTML = `
+                        <i class="fas fa-check-circle"></i>
+                        File enriched successfully! You can now download enriched file.<br>
+                        <strong>Time taken: ${timeTakenSeconds} seconds</strong>
+                    `;
+                
 
             } catch (err) {
                 console.error(err);
