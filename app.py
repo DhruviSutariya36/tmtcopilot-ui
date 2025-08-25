@@ -54,27 +54,17 @@ def start_enrichment():
         files = {"file": (file.filename, file.stream, file.mimetype)}
         logging.info(f"Sending file {file.filename} to Durable Function")
 
-        resp = requests.post(DURABLE_STARTER_URL, files=files, timeout=10)
+        resp = requests.post(DURABLE_STARTER_URL, files=files, timeout=30)
         resp.raise_for_status()
         resp_json = sanitize_json(resp.json())
 
         if resp.status_code != 202:
             return jsonify({"error": "Failed to start enrichment"}), 500
 
-        instance_id = resp_json.get("instanceId")
-        status_url = resp_json.get("statusQueryGetUri")
-        if not status_url:
-            return jsonify({"error": "No status URL returned by Durable Function"}), 500
-
-        logging.info(f"Durable Function started successfully, status URL: {status_url}")
-
-        # Poll until orchestration completes
-        enriched_blob_url = poll_for_completion(status_url)
-        if not enriched_blob_url:
-            return jsonify({"error": "Processing failed or timed out"}), 500
-
-        return jsonify({"enriched_blob_url": enriched_blob_url})
-
+        return jsonify({
+            "instanceId": resp_json.get("id"),
+            "statusQueryGetUri": resp_json.get("statusQueryGetUri")
+        })
     except Exception as e:
         logging.exception("Error in start_enrichment")
         return jsonify({"error": str(e)}), 500
