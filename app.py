@@ -6,17 +6,13 @@ import requests
 import math
 from flask import Flask, request, jsonify, render_template, send_file
 
-from config import AZURE_DOWNLOAD_FUNCTION_URL
+from config import AZURE_DOWNLOAD_FUNCTION_URL, DURABLE_STARTER_URL
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-DURABLE_STARTER_URL = os.getenv(
-    "PARSE_FUNCTION_URL",
-    "https://dev-tmtcopilot-func-bedma3g8buhnczbj.centralindia-01.azurewebsites.net/api/process"
-)
 
 # ----------------------
 # Helper: sanitize JSON

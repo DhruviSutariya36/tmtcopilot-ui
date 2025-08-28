@@ -413,6 +413,9 @@
                 
                 <div class="alert-success" id="successMessage">
                     <i class="fas fa-check-circle"></i>File enriched successfully! You can now download the enriched CSV  report.
+                    <p id="timeTaken" style="color:white; font-size:16px; margin-top:10px; display:none;">
+                        Time taken: <span id="timeValue">0</span> minutes
+                    </p>
                 </div>
                 
                 <div class="download-section" id="downloadSection">
@@ -539,6 +542,11 @@
 
             if (runtimeStatus === "Completed") {
                 enrichedBlobUrl = statusData.output.enriched_blob_url;
+                if (statusData.customStatus && statusData.customStatus.elapsed_minutes !== undefined) {
+                    successMessage.innerHTML = `<i class="fas fa-check-circle"></i>
+                        File enriched successfully in <b>${statusData.customStatus.elapsed_minutes} minutes</b>! 
+                        You can now download the enriched CSV report.`;
+                    }
                 break;
             } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
                 alert("Processing failed.");
