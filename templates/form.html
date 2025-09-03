@@ -453,7 +453,7 @@
         const blobInput = document.getElementById("blob_url");
         const filenameInput = document.getElementById("filename");
         const fileInput = document.getElementById("file");
-
+        let startTime;
         // Drag and drop functionality
         const fileInputLabel = document.querySelector('.file-input-label');
         
@@ -542,11 +542,17 @@
 
             if (runtimeStatus === "Completed") {
                 enrichedBlobUrl = statusData.output.enriched_blob_url;
-                if (statusData.customStatus && statusData.customStatus.elapsed_minutes !== undefined) {
+                // Calculate time taken
+                const endTime = new Date();
+                    const diffMs = endTime - startTime;
+                    const mins = Math.floor(diffMs / 60000);
+                    const secs = Math.floor((diffMs % 60000) / 1000);
+                    const timeTakenText = `${mins}min ${secs}sec`;
+                
                     successMessage.innerHTML = `<i class="fas fa-check-circle"></i>
-                        File enriched successfully in <b>${statusData.customStatus.elapsed_minutes} minutes</b>! 
-                        You can now download the enriched CSV report.`;
-                    }
+                        File enriched successfully! You can now download the enriched CSV report. Time taken: <b>${timeTakenText}</b>! 
+                        `;
+                    
                 break;
             } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
                 alert("Processing failed.");
