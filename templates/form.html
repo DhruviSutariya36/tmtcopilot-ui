@@ -514,7 +514,8 @@
     spinner.style.display = "flex";
     successMessage.style.display = "none";
     downloadSection.style.display = "none";
-
+    
+    startTime = new Date();
     const formData = new FormData(form);
     const fileField = form.querySelector('input[name="file"]');
     const originalName = fileField.files[0]?.name || "download.csv";
