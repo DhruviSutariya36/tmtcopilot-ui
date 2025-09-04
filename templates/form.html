@@ -446,6 +446,8 @@
     </footer>
 
     <script>
+        let startTime;
+
         const form = document.getElementById("uploadForm");
         const spinner = document.getElementById("spinner-overlay");
         const successMessage = document.getElementById("successMessage");
@@ -453,7 +455,7 @@
         const blobInput = document.getElementById("blob_url");
         const filenameInput = document.getElementById("filename");
         const fileInput = document.getElementById("file");
-        let startTime;
+        
         // Drag and drop functionality
         const fileInputLabel = document.querySelector('.file-input-label');
         
@@ -510,83 +512,84 @@
 
         // Form submission
         form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    spinner.style.display = "flex";
-    successMessage.style.display = "none";
-    downloadSection.style.display = "none";
-    
-    startTime = new Date();
-    const formData = new FormData(form);
-    const fileField = form.querySelector('input[name="file"]');
-    const originalName = fileField.files[0]?.name || "download.csv";
-    const enrichedName = "threat_analysis_" + originalName.replace(/ /g, "_");
+            e.preventDefault();
+            spinner.style.display = "flex";
+            successMessage.style.display = "none";
+            downloadSection.style.display = "none";
+            
+            startTime = new Date();
+            const formData = new FormData(form);
+            const fileField = form.querySelector('input[name="file"]');
+            const originalName = fileField.files[0]?.name || "download.csv";
+            const enrichedName = "threat_analysis_" + originalName.replace(/ /g, "_");
 
-    try {
-        const resp = await fetch("/", { method: "POST", body: formData });
-        const data = await resp.json();
+            try {
+                const resp = await fetch("/", { method: "POST", body: formData });
+                const data = await resp.json();
 
-        if (!resp.ok || !data.statusQueryGetUri) {
-            alert(data.error || "Failed to start enrichment");
-            spinner.style.display = "none";
-            return;
-        }
+                if (!resp.ok || !data.statusQueryGetUri) {
+                    alert(data.error || "Failed to start enrichment");
+                    spinner.style.display = "none";
+                    return;
+                }
 
-        const statusUrl = data.statusQueryGetUri;
+                const statusUrl = data.statusQueryGetUri;
 
-        // Poll Durable Function status directly from browser
-        let enrichedBlobUrl = null;
-        let runtimeStatus = "";
-        while (!["Completed", "Failed", "Terminated"].includes(runtimeStatus)) {
-            const statusResp = await fetch(statusUrl);
-            const statusData = await statusResp.json();
-            runtimeStatus = statusData.runtimeStatus;
+                // Poll Durable Function status directly from browser
+                let enrichedBlobUrl = null;
+                let runtimeStatus = "";
+                while (!["Completed", "Failed", "Terminated"].includes(runtimeStatus)) {
+                    const statusResp = await fetch(statusUrl);
+                    const statusData = await statusResp.json();
+                    runtimeStatus = statusData.runtimeStatus;
 
-            if (runtimeStatus === "Completed") {
-                enrichedBlobUrl = statusData.output.enriched_blob_url;
-                // Calculate time taken
-                const endTime = new Date();
-                    const diffMs = endTime - startTime;
-                    const mins = Math.floor(diffMs / 60000);
-                    const secs = Math.floor((diffMs % 60000) / 1000);
-                    const timeTakenText = `${mins}min ${secs}sec`;
-                
-                    successMessage.innerHTML = `<i class="fas fa-check-circle"></i>
-                        File enriched successfully! You can now download the enriched CSV report. Time taken: <b>${timeTakenText}</b>! 
-                        `;
-                    
-                break;
-            } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
-                alert("Processing failed.");
+                    if (runtimeStatus === "Completed") {
+                        enrichedBlobUrl = statusData.output.enriched_blob_url;
+                        // Calculate time taken
+                        const endTime = new Date();
+                        const diffMs = endTime.getTime() - startTime.getTime();
+                        const mins = Math.floor(diffMs / 60000);
+                        const secs = Math.floor((diffMs % 60000) / 1000);
+
+                        const timeTakenText = `${mins}min ${secs}sec`;
+                        
+                        successMessage.innerHTML = `<i class="fas fa-check-circle"></i>
+                                File enriched successfully! You can now download the enriched CSV report. Time taken: <b>${timeTakenText}</b>! 
+                                `;
+                            
+                        break;
+                    } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
+                        alert("Processing failed.");
+                        spinner.style.display = "none";
+                        return;
+                    }
+
+                    // Optional: show progress if you set context.set_custom_status in orchestrator
+                    if (statusData.customStatus) {
+                        spinner.querySelector(".spinner-text").textContent =
+                            `Progress: ${statusData.customStatus.progress}`;
+                    }
+
+                    await new Promise(r => setTimeout(r, 5000)); // poll every 5s
+                }
+
+                if (!enrichedBlobUrl) {
+                    alert("No enriched file returned.");
+                    spinner.style.display = "none";
+                    return;
+                }
+
+                blobInput.value = enrichedBlobUrl;
+                filenameInput.value = enrichedName;
+
                 spinner.style.display = "none";
-                return;
+                successMessage.style.display = "block";
+                downloadSection.style.display = "block";
+            } catch (err) {
+                console.error(err);
+                alert("An error occurred while processing the file.");
+                spinner.style.display = "none";
             }
-
-            // Optional: show progress if you set context.set_custom_status in orchestrator
-            if (statusData.customStatus) {
-                spinner.querySelector(".spinner-text").textContent =
-                    `Progress: ${statusData.customStatus.progress}`;
-            }
-
-            await new Promise(r => setTimeout(r, 5000)); // poll every 5s
-        }
-
-        if (!enrichedBlobUrl) {
-            alert("No enriched file returned.");
-            spinner.style.display = "none";
-            return;
-        }
-
-        blobInput.value = enrichedBlobUrl;
-        filenameInput.value = enrichedName;
-
-        spinner.style.display = "none";
-        successMessage.style.display = "block";
-        downloadSection.style.display = "block";
-    } catch (err) {
-        console.error(err);
-        alert("An error occurred while processing the file.");
-        spinner.style.display = "none";
-    }
 });
 
     </script>
