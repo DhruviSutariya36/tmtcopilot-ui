@@ -564,10 +564,10 @@
                         return;
                     }
 
-                    // Optional: show progress if you set context.set_custom_status in orchestrator
+                    // Optional: show progress message
                     if (statusData.customStatus) {
                         spinner.querySelector(".spinner-text").textContent =
-                            `Progress(%): ${statusData.customStatus.progress_percent}`;
+                            `Enriching rows`;
                     }
 
                     await new Promise(r => setTimeout(r, 5000)); // poll every 5s
