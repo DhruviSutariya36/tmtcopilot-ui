@@ -44,13 +44,21 @@ def upload_page():
 def start_enrichment():
     try:
         file = request.files.get("file")
+        architecture = request.files.get("architecture")
+        description = request.form.get("description", "")
         if not file:
             return jsonify({"error": "Missing file"}), 400
 
-        files = {"file": (file.filename, file.stream, file.mimetype)}
+        files = {"csv_file": (file.filename, file.stream, file.mimetype)}
+        if architecture:
+            files["diagram_file"] = (architecture.filename, architecture.stream, architecture.mimetype)
+        data = {
+            "description": description,
+            "category": request.form.get("category", "")
+        }
         logging.info(f"Sending file {file.filename} to Durable Function")
 
-        resp = requests.post(DURABLE_STARTER_URL, files=files, timeout=30)
+        resp = requests.post(DURABLE_STARTER_URL, files=files, data=data, timeout=30)
         resp.raise_for_status()
         resp_json = sanitize_json(resp.json())
 

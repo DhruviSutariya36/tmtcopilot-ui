@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Threat Modelling Tool Co-Pilot</title>
+    <title>Threat Modeling Tool Co-Pilot</title>
     <style>
         * {
             margin: 0;
@@ -359,7 +359,7 @@
         <div class="header-content">
             <div class="logo-container">
                 <img src="{{ url_for('static', filename='images/logo_e.jpg') }}" alt="Logo" class="banner-logo">
-                <h1 class="header-title">Threat Modelling Tool Co-Pilot</h1>
+                <h1 class="header-title">THREAT MODELING TOOL CO-PILOT</h1>
             </div>
         </div>
     </header>
@@ -368,8 +368,8 @@
     <div class="container">
         <div class="card">
             <div class="card-header">
-                <h2 class="card-title"> Threat modelling tool</h2>
-                <p class="card-subtitle">Upload your system details to generate enriched csv file</p>
+                <h2 class="card-title">THREAT MODELING TOOL CO-PILOT</h2>
+                <p class="card-subtitle">Provide system information to generate enriched threat analysis report(csv)</p>
             </div>
             
             <div class="card-body">
@@ -379,7 +379,7 @@
                             <i class="fas fa-list-alt"></i>Compliance Standard
                         </label>
                         <select id="category" name="category" class="form-control" required>
-                            <option value="">-- Choose Compliance Standard --</option>
+                            <option value="">-- Select Compliance Standard --</option>
                             <option value="OWASP">OWASP Application Security</option>
                             
                         </select>
@@ -387,14 +387,28 @@
                     
                     <div class="form-group">
                         <label for="description" class="form-label">
-                            <i class="fas fa-align-left"></i>System Description
+                            <i class="fas fa-align-left"></i>Describe your system
                         </label>
-                        <textarea id="description" name="description" class="form-control" placeholder="Describe your system architecture, components, data flows, and security requirements..." required></textarea>
+                        <textarea id="description" name="description" class="form-control" placeholder="Detailed descriptions help generate accurate enrichment results" required></textarea>
                     </div>
-                    
+
                     <div class="form-group">
                         <label class="form-label">
-                            <i class="fas fa-file-csv"></i>Upload CSV File
+                            <i class="fas fa-image"></i>Upload System Architecture Diagram
+                        </label>
+                        <div class="file-input-container">
+                            <label for="architecture" class="file-input-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span class="file-input-text">Click to browse or drag & drop your Architecture Image</span>
+                                <span class="file-input-subtext">Accepted formats: JPG, PNG (Max 5MB)</span>
+                            </label>
+                            <input type="file" id="architecture" name="architecture" accept=".png,.jpg,.jpeg">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-file-csv"></i>Upload TMT CSV file
                         </label>
                         <div class="file-input-container">
                             <label for="file" class="file-input-label">
@@ -405,9 +419,9 @@
                             <input type="file" id="file" name="file" accept=".csv" required>
                         </div>
                     </div>
-                    
+
                     <button type="submit" class="btn">
-                        <i class="fas fa-bolt"></i>Analyze File
+                        <i class="fas fa-bolt"></i>Run Enrichment
                     </button>
                 </form>
                 
@@ -441,7 +455,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <p class="footer-text">© 2025 Threat Modelling Tool | eInfochips</p>
+            <p class="footer-text">© 2025 Threat Modeling Tool Co-Pilot| eInfochips</p>
         </div>
     </footer>
 
@@ -522,7 +536,10 @@
             const fileField = form.querySelector('input[name="file"]');
             const originalName = fileField.files[0]?.name || "download.csv";
             const enrichedName = "threat_analysis_" + originalName.replace(/ /g, "_");
-
+            const architectureFile = document.getElementById("architecture").files[0];
+            if (architectureFile) {
+                formData.append("architecture", architectureFile);
+            }
             try {
                 const resp = await fetch("/", { method: "POST", body: formData });
                 const data = await resp.json();
