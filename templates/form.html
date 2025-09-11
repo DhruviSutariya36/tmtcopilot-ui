@@ -396,10 +396,10 @@
                             <i class="fas fa-image"></i>Upload Architecture Image (optional)
                         </label>
                         <div class="file-input-container">
-                            <label for="architecture" class="file-input-label architecture-label">
+                            <label for="architecture" class="architecture-label file-input-label">
                                 <i class="fas fa-cloud-upload-alt"></i>
-                                <span class="file-input-text">Click to browse or drag & drop your image</span>
-                                <span class="file-input-subtext">Supported: JPG, PNG, GIF (Max 5MB)</span>
+                                <span class="file-input-text-architecture">Click to browse or drag & drop your image</span>
+                                <span class="file-input-subtext-architecture">Supported: JPG, PNG, GIF (Max 5MB)</span>
                             </label>
                             <input type="file" id="architecture" name="architecture" accept="image/*">
                         </div>
@@ -410,10 +410,10 @@
                             <i class="fas fa-file-csv"></i>Upload TMT CSV file
                         </label>
                         <div class="file-input-container">
-                            <label for="file" class="file-input-label">
+                            <label for="file" class="file-input-label fileInput">
                                 <i class="fas fa-cloud-upload-alt"></i>
-                                <span class="file-input-text">Click to browse or drag & drop your CSV file</span>
-                                <span class="file-input-subtext">Maximum file size: 10MB</span>
+                                <span class="file-input-text-csv">Click to browse or drag & drop your CSV file</span>
+                                <span class="file-input-subtext-csv">Maximum file size: 10MB</span>
                             </label>
                             <input type="file" id="file" name="file" accept=".csv" required>
                         </div>
@@ -469,50 +469,9 @@
         const filenameInput = document.getElementById("filename");
         const fileInput = document.getElementById("file");
         const architectureInput = document.getElementById("architecture");
-const architectureLabel = document.querySelector('.architecture-label');
 
-// Drag and drop functionality for architecture
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    architectureLabel.addEventListener(eventName, preventDefaults, false);
-});
-
-['dragenter', 'dragover'].forEach(eventName => {
-    architectureLabel.addEventListener(eventName, () => {
-        architectureLabel.style.borderColor = '#2c73b9';
-        architectureLabel.style.backgroundColor = '#e0f0ff';
-    }, false);
-});
-
-['dragleave', 'drop'].forEach(eventName => {
-    architectureLabel.addEventListener(eventName, () => {
-        architectureLabel.style.borderColor = '#cbd6e0';
-        architectureLabel.style.backgroundColor = '#f8fafc';
-    }, false);
-});
-
-architectureLabel.addEventListener('drop', function(e) {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-    architectureInput.files = files;
-
-    if (files.length > 0) {
-        architectureLabel.querySelector('.file-input-text').textContent = files[0].name;
-        architectureLabel.querySelector('.file-input-subtext').textContent =
-            'File selected: ' + (files[0].size / 1024 / 1024).toFixed(2) + 'MB';
-    }
-}, false);
-
-// File input change event
-architectureInput.addEventListener('change', function() {
-    if (this.files && this.files[0]) {
-        architectureLabel.querySelector('.file-input-text').textContent = this.files[0].name;
-        architectureLabel.querySelector('.file-input-subtext').textContent =
-            'File selected: ' + (this.files[0].size / 1024 / 1024).toFixed(2) + 'MB';
-    }
-});
-
-        // Drag and drop functionality
-        const fileInputLabel = document.querySelector('.file-input-label');
+    // Drag and drop functionality
+        const fileInputLabel = document.querySelector('.fileInput');
         
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             fileInputLabel.addEventListener(eventName, preventDefaults, false);
@@ -550,17 +509,25 @@ architectureInput.addEventListener('change', function() {
             
             // Update the label text
             if (files.length > 0) {
-                document.querySelector('.file-input-text').textContent = files[0].name;
-                document.querySelector('.file-input-subtext').textContent = 
+                document.querySelector('.file-input-text-architecture').textContent = files[0].name;
+                document.querySelector('.file-input-text-architecture').textContent = 
                     'File selected: ' + (files[0].size / 1024 / 1024).toFixed(2) + 'MB';
             }
         }
 
+        architectureInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                document.querySelector('.file-input-text-architecture').textContent = this.files[0].name;
+                document.querySelector('.file-input-subtext-architecture').textContent =
+                    'File selected: ' + (this.files[0].size / 1024 / 1024).toFixed(2) + 'MB';
+            }
+        });
+
         // File input change event
         fileInput.addEventListener('change', function() {
             if (this.files && this.files[0]) {
-                document.querySelector('.file-input-text').textContent = this.files[0].name;
-                document.querySelector('.file-input-subtext').textContent = 
+                document.querySelector('.file-input-text-csv').textContent = this.files[0].name;
+                document.querySelector('.file-input-subtext-csv').textContent =
                     'File selected: ' + (this.files[0].size / 1024 / 1024).toFixed(2) + 'MB';
             }
         });
