@@ -391,21 +391,20 @@
                         </label>
                         <textarea id="description" name="description" class="form-control" placeholder="Detailed descriptions help generate accurate enrichment results" required></textarea>
                     </div>
-
                     <div class="form-group">
                         <label class="form-label">
-                            <i class="fas fa-image"></i>Upload System Architecture Diagram
+                            <i class="fas fa-image"></i>Upload Architecture Image (optional)
                         </label>
                         <div class="file-input-container">
-                            <label for="architecture" class="file-input-label">
+                            <label for="architecture" class="file-input-label architecture-label">
                                 <i class="fas fa-cloud-upload-alt"></i>
-                                <span class="file-input-text">Click to browse or drag & drop your Architecture Image</span>
-                                <span class="file-input-subtext">Accepted formats: JPG, PNG (Max 5MB)</span>
+                                <span class="file-input-text">Click to browse or drag & drop your image</span>
+                                <span class="file-input-subtext">Supported: JPG, PNG, GIF (Max 5MB)</span>
                             </label>
-                            <input type="file" id="architecture" name="architecture" accept=".png,.jpg,.jpeg">
+                            <input type="file" id="architecture" name="architecture" accept="image/*">
                         </div>
                     </div>
-
+              
                     <div class="form-group">
                         <label class="form-label">
                             <i class="fas fa-file-csv"></i>Upload TMT CSV file
@@ -469,7 +468,49 @@
         const blobInput = document.getElementById("blob_url");
         const filenameInput = document.getElementById("filename");
         const fileInput = document.getElementById("file");
-        
+        const architectureInput = document.getElementById("architecture");
+const architectureLabel = document.querySelector('.architecture-label');
+
+// Drag and drop functionality for architecture
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    architectureLabel.addEventListener(eventName, preventDefaults, false);
+});
+
+['dragenter', 'dragover'].forEach(eventName => {
+    architectureLabel.addEventListener(eventName, () => {
+        architectureLabel.style.borderColor = '#2c73b9';
+        architectureLabel.style.backgroundColor = '#e0f0ff';
+    }, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    architectureLabel.addEventListener(eventName, () => {
+        architectureLabel.style.borderColor = '#cbd6e0';
+        architectureLabel.style.backgroundColor = '#f8fafc';
+    }, false);
+});
+
+architectureLabel.addEventListener('drop', function(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    architectureInput.files = files;
+
+    if (files.length > 0) {
+        architectureLabel.querySelector('.file-input-text').textContent = files[0].name;
+        architectureLabel.querySelector('.file-input-subtext').textContent =
+            'File selected: ' + (files[0].size / 1024 / 1024).toFixed(2) + 'MB';
+    }
+}, false);
+
+// File input change event
+architectureInput.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+        architectureLabel.querySelector('.file-input-text').textContent = this.files[0].name;
+        architectureLabel.querySelector('.file-input-subtext').textContent =
+            'File selected: ' + (this.files[0].size / 1024 / 1024).toFixed(2) + 'MB';
+    }
+});
+
         // Drag and drop functionality
         const fileInputLabel = document.querySelector('.file-input-label');
         
