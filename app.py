@@ -62,7 +62,7 @@ def start_enrichment():
         resp.raise_for_status()
         resp_json = sanitize_json(resp.json())
 
-        if resp.status_code != 202:
+        if resp.status_code not in [200, 202]:
             return jsonify({"error": "Failed to start enrichment"}), 500
 
         return jsonify({
