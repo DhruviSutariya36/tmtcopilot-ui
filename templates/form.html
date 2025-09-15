@@ -563,9 +563,10 @@
                 // Poll Durable Function status directly from browser
                 let enrichedBlobUrl = null;
                 let runtimeStatus = "";
-                while (!["Completed", "Failed", "Terminated"].includes(runtimeStatus)) {
+                while (true) {
                     const statusResp = await fetch(statusUrl);
                     const statusData = await statusResp.json();
+                    console.log("Durable status:", statusData);
                     runtimeStatus = statusData.runtimeStatus;
 
                     if (runtimeStatus === "Completed") {
