@@ -416,6 +416,13 @@
                                 <span class="file-input-subtext-csv">Maximum file size: 10MB</span>
                             </label>
                             <input type="file" id="file" name="file" accept=".csv" required>
+                            <div class="limitation-notice">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <div class="limitation-text">
+                                    <strong>Note:</strong> This tool currently supports a maximum of 1000 threats per analysis. 
+                                    Files with more threats will be truncated to the first 1000 entries.
+                                </div>
+                            </div>
                         </div>
                     </div>
 
