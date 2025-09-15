@@ -210,6 +210,29 @@
             border: 0;
         }
         
+        .simple-notice {
+            background: #fff8e6;
+            border: 1px solid #ffd54f;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .simple-notice i {
+            color: #ff9800;
+            margin-right: 10px;
+            font-size: 18px;
+            margin-top: 2px;
+        }
+        
+        .simple-text {
+            color: #856404;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
         .btn {
             display: block;
             width: 100%;
@@ -416,11 +439,10 @@
                                 <span class="file-input-subtext-csv">Maximum file size: 10MB</span>
                             </label>
                             <input type="file" id="file" name="file" accept=".csv" required>
-                            <div class="limitation-notice">
+                            <div class="simple-notice">
                                 <i class="fas fa-exclamation-circle"></i>
-                                <div class="limitation-text">
-                                    <strong>Note:</strong> This tool currently supports a maximum of 1000 threats per analysis. 
-                                    Files with more threats will be truncated to the first 1000 entries.
+                                <div class="simple-text">
+                                    <strong>Note:</strong> Maximum of 1000 threats supported. Additional threats will be truncated.
                                 </div>
                             </div>
                         </div>
@@ -590,7 +612,7 @@
                             <div style="text-align: left;">
                                 <div><i class="fas fa-check-circle" style="color: #28a745;"></i> <b>Enrichment Successful</b></div>
                                 <div style="margin: 10px 0 0 20px;">
-                                    <i class="fas fa-database"></i> Records processed: <b>${total_rows}</b><br>
+                                    <i class="fas fa-database"></i> Records processed: <b>${statusData.output.total_rows}</b><br>
                                     <i class="fas fa-clock"></i> Time taken: <b>${timeTakenText}</b><br>
                                     <i class="fas fa-file-csv"></i> Status: Ready for download
                                 </div>
