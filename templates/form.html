@@ -448,7 +448,7 @@
     <!-- Spinner Overlay -->
     <div class="spinner-overlay" id="spinner-overlay">
         <div class="spinner"></div>
-        <p class="spinner-text">Analyzing your CSV. This may take a moment...</p>
+        <p class="spinner-text">Analyzing your CSV. This may take in a while...</p>
     </div>
     
     <!-- Footer -->
@@ -592,8 +592,11 @@
 
                     // Optional: show progress message
                     if (statusData.customStatus) {
-                        spinner.querySelector(".spinner-text").textContent =
-                            `Total rows ${statusData.output.total_rows} `;
+                        let progressText = `Stage: ${statusData.customStatus.stage}`;
+                        if (statusData.output && statusData.output.total_rows !== undefined) {
+                            progressText += ` | Total rows: ${statusData.output.total_rows}`;
+                        }
+                        spinner.querySelector(".spinner-text").textContent = progressText;
                     }
 
                     await new Promise(r => setTimeout(r, 5000)); // poll every 5s
