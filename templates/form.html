@@ -448,7 +448,7 @@
     <!-- Spinner Overlay -->
     <div class="spinner-overlay" id="spinner-overlay">
         <div class="spinner"></div>
-        <p class="spinner-text">Analyzing your CSV. This may take in a while...</p>
+        <p class="spinner-text">Analyzing your CSV. This may take a while...</p>
     </div>
     
     <!-- Footer -->
@@ -579,9 +579,16 @@
 
                         const timeTakenText = `${mins}min ${secs}sec`;
                         
-                        successMessage.innerHTML = `<i class="fas fa-check-circle"></i>
-                                File enriched successfully! You can now download the enriched CSV report. Time taken: <b>${timeTakenText}</b>! 
-                                `;
+                        successMessage.innerHTML = `
+                            <div style="text-align: left;">
+                                <div><i class="fas fa-check-circle" style="color: #28a745;"></i> <b>Enrichment Successful</b></div>
+                                <div style="margin: 10px 0 0 20px;">
+                                    <i class="fas fa-database"></i> Records processed: <b>${totalRows}</b><br>
+                                    <i class="fas fa-clock"></i> Time taken: <b>${timeTakenText}</b><br>
+                                    <i class="fas fa-file-csv"></i> Status: Ready for download
+                                </div>
+                            </div>
+                        `;
                             
                         break;
                     } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
