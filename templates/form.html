@@ -148,6 +148,63 @@
             transition: all 0.3s ease;
         }
         
+        .progress-warning {
+            color: #ff5722;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .progress-notice {
+            margin-top: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #e1e8ed;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #2E7D32 100%);
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .progress-text {
+            text-align: center;
+            font-size: 13px;
+            color: #7b8a9b;
+        }
+        
+        .file-processing {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+            color: #2c73b9;
+            font-size: 14px;
+        }
+
+        .file-processing i {
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
         .form-control:focus {
             border-color: #2c73b9;
             box-shadow: 0 0 0 3px rgba(44, 115, 185, 0.2);
@@ -188,13 +245,24 @@
             margin-bottom: 15px;
         }
         
-        .file-input-text {
+        .file-input-text-csv {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .file-input-text-architecture {
             font-weight: 600;
             color: #2c3e50;
             margin-bottom: 8px;
         }
         
-        .file-input-subtext {
+        .file-input-subtext-csv {
+            color: #7b8a9b;
+            font-size: 14px;
+        }
+
+        .file-input-subtext-architecture {
             color: #7b8a9b;
             font-size: 14px;
         }
@@ -210,6 +278,15 @@
             border: 0;
         }
         
+       .btn-primary {
+            background: #2c73b9;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: 600;
+        }
         .simple-notice {
             background: #fff8e6;
             border: 1px solid #ffd54f;
@@ -439,16 +516,30 @@
                                 <span class="file-input-subtext-csv">Maximum file size: 10MB</span>
                             </label>
                             <input type="file" id="file" name="file" accept=".csv" required>
-                            <div class="simple-notice">
-                                <i class="fas fa-exclamation-circle"></i>
-                                <div class="simple-text">
-                                    <strong>Note:</strong> Maximum of 1000 threats supported. Additional threats will be truncated.
+                            
+                            <!-- File Processing Indicator -->
+                            <div class="file-processing" id="file-processing">
+                                <i class="fas fa-spinner"></i> Analyzing file structure...
+                            </div>
+                            
+                            <!-- Progress Bar Style Limitation Notice -->
+                            <div class="progress-notice" id="progress-notice" style="display: none;">
+                                <div class="progress-header">
+                                    <span>Threat Capacity</span>
+                                    <span id="threat-count">0/1000</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="progress-fill"></div>
+                                </div>
+                                <div class="progress-text">
+                                    This tool supports a maximum of 1000 threats per analysis
+                                    <div class="progress-warning" id="limit-warning">Files with more threats will be truncated</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <button type="submit" class="btn">
+            
+                <button type="submit" class="btn">
                         <i class="fas fa-bolt"></i>Run Enrichment
                     </button>
                 </form>
@@ -498,8 +589,64 @@
         const filenameInput = document.getElementById("filename");
         const fileInput = document.getElementById("file");
         const architectureInput = document.getElementById("architecture");
+        const threatCount = document.getElementById("threat-count");
+        const progressFill = document.getElementById("progress-fill");
+        const progressNotice = document.getElementById("progress-notice");
+        const fileProcessing = document.getElementById("file-processing");
+        const limitWarning = document.getElementById("limit-warning");
 
-    // Drag and drop functionality
+        // Function to update threat count display
+        function updateThreatCount(count) {
+            const percentage = Math.min((count / 1000) * 100, 100);
+            threatCount.textContent = `${count}/1000`;
+            progressFill.style.width = `${percentage}%`;
+            
+            // Change color based on percentage
+            if (count > 1000) {
+                progressFill.style.background = "linear-gradient(90deg, #f44336 0%, #d32f2f 100%)";
+                limitWarning.textContent = "File exceeds 1000 threats! Only the first 1000 will be processed.";
+            } else if (percentage > 90) {
+                progressFill.style.background = "linear-gradient(90deg, #ff9800 0%, #ff5722 100%)";
+                limitWarning.textContent = "File is close to the limit. Consider reducing threats if possible.";
+            } else if (percentage > 70) {
+                progressFill.style.background = "linear-gradient(90deg, #ffc107 0%, #ff9800 100%)";
+                limitWarning.textContent = "Files with more than 1000 threats will be truncated";
+            } else {
+                progressFill.style.background = "linear-gradient(90deg, #4CAF50 0%, #2E7D32 100%)";
+                limitWarning.textContent = "Files with more than 1000 threats will be truncated";
+            }
+            
+            // Show the progress notice
+            progressNotice.style.display = 'block';
+        }
+
+        // Function to parse CSV and count rows (threats)
+        function parseCSVAndCountRows(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const text = e.target.result;
+                        // Count the number of lines minus the header (if exists)
+                        const lines = text.split('\n').filter(line => line.trim() !== '');
+                        // Assuming first row is header, so threats count is lines.length - 1
+                        const threatCount = Math.max(0, lines.length - 1);
+                        resolve(threatCount);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                reader.onerror = function() {
+                    reject(new Error('Failed to read file'));
+                };
+                
+                reader.readAsText(file);
+            });
+        }
+
+        // Drag and drop functionality
         const fileInputLabel = document.querySelector('.fileInput');
         
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -553,11 +700,31 @@
         });
 
         // File input change event
-        fileInput.addEventListener('change', function() {
+        fileInput.addEventListener('change',  async function() {
             if (this.files && this.files[0]) {
                 document.querySelector('.file-input-text-csv').textContent = this.files[0].name;
                 document.querySelector('.file-input-subtext-csv').textContent =
                     'File selected: ' + (this.files[0].size / 1024 / 1024).toFixed(2) + 'MB';
+                    
+                // Show processing indicator
+                fileProcessing.style.display = 'block';
+                progressNotice.style.display = 'none';
+
+                try {
+                    // Parse the CSV and count threats
+                    const threatCount = await parseCSVAndCountRows(this.files[0]);
+                    
+                    // Update the UI with the threat count
+                    updateThreatCount(threatCount);
+                } catch (error) {
+                    console.error('Error parsing CSV:', error);
+                    // Fallback: show a default count if parsing fails
+                    updateThreatCount(0);
+                    alert('Could not parse the CSV file. Please make sure it is a valid CSV format.');
+                } finally {
+                    // Hide processing indicator
+                    fileProcessing.style.display = 'none';
+                }
             }
         });
 
@@ -608,16 +775,9 @@
 
                         const timeTakenText = `${mins}min ${secs}sec`;
                         
-                        successMessage.innerHTML = `
-                            <div style="text-align: left;">
-                                <div><i class="fas fa-check-circle" style="color: #28a745;"></i> <b>Enrichment Successful</b></div>
-                                <div style="margin: 10px 0 0 20px;">
-                                    <i class="fas fa-database"></i> Records processed: <b>${statusData.output.total_rows}</b><br>
-                                    <i class="fas fa-clock"></i> Time taken: <b>${timeTakenText}</b><br>
-                                    <i class="fas fa-file-csv"></i> Status: Ready for download
-                                </div>
-                            </div>
-                        `;
+                        successMessage.innerHTML = `<i class="fas fa-check-circle"></i>
+                            File enriched successfully! Processed <b>${statusData.output.total_rows}</b> rows. You can now download the enriched CSV report. Time taken: <b>${timeTakenText}</b>!
+                            `;
                             
                         break;
                     } else if (runtimeStatus === "Failed" || runtimeStatus === "Terminated") {
