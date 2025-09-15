@@ -610,10 +610,10 @@
                 limitWarning.textContent = "File is close to the limit. Consider reducing threats if possible.";
             } else if (percentage > 70) {
                 progressFill.style.background = "linear-gradient(90deg, #ffc107 0%, #ff9800 100%)";
-                limitWarning.textContent = "Files with more than 1000 threats will be truncated";
+                limitWarning.textContent = "Maximum of 1000 threats supported. Additional threats will be truncated.";
             } else {
                 progressFill.style.background = "linear-gradient(90deg, #4CAF50 0%, #2E7D32 100%)";
-                limitWarning.textContent = "Files with more than 1000 threats will be truncated";
+                limitWarning.textContent = "Maximum of 1000 threats supported. Additional threats will be truncated.";
             }
             
             // Show the progress notice
