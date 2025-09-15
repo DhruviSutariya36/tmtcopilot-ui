@@ -73,31 +73,6 @@ def start_enrichment():
         logging.exception("Error in start_enrichment")
         return jsonify({"error": str(e)}), 500
 
-
-def poll_for_completion(status_url, timeout=300, interval=5):
-    """Poll Durable Function until Completed, Failed, or Terminated."""
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        try:
-            response = requests.get(status_url)
-            response.raise_for_status()
-            status_data = response.json()
-            runtime_status = status_data.get("runtimeStatus", "")
-            if runtime_status in ["Completed", "Failed", "Terminated"]:
-                if runtime_status == "Completed":
-                    output = status_data.get("output")
-                    if isinstance(output, str):
-                        import json
-                        output = json.loads(output)
-                    return output.get("enriched_blob_url")
-                return None
-        except Exception as e:
-            logging.error(f"Failed to fetch status: {e}")
-            return None
-        time.sleep(interval)
-    logging.error("Polling timed out")
-    return None
-
 @app.route("/download", methods=["GET"])
 def download_csv():
     blob_url = request.args.get("blob_url")
