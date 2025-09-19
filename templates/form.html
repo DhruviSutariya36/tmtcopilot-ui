@@ -480,7 +480,7 @@
                         </label>
                         <select id="category" name="category" class="form-control" required>
                             <option value="">-- Select Compliance Standard --</option>
-                            <option value="OWASP">OWASP Application Security</option>
+                            <option value="OWASP">OWSAP Top 10</option>
                             
                         </select>
                     </div>
@@ -516,24 +516,10 @@
                                 <span class="file-input-subtext-csv">Maximum file size: 10MB</span>
                             </label>
                             <input type="file" id="file" name="file" accept=".csv" required>
-                            
-                            <!-- File Processing Indicator -->
-                            <div class="file-processing" id="file-processing">
-                                <i class="fas fa-spinner"></i> Analyzing file structure...
-                            </div>
-                            
-                            <!-- Progress Bar Style Limitation Notice -->
-                            <div class="progress-notice" id="progress-notice" style="display: none;">
-                                <div class="progress-header">
-                                    <span>Threat Capacity</span>
-                                    <span id="threat-count">0/1000</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" id="progress-fill"></div>
-                                </div>
-                                <div class="progress-text">
-                                    This tool supports a maximum of 1000 threats per analysis
-                                    <div class="progress-warning" id="limit-warning">Files with more threats will be truncated</div>
+                            <div class="simple-notice">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <div class="simple-text">
+                                    <strong>Note:</strong> Maximum of 1000 threats supported. Additional threats will be truncated.
                                 </div>
                             </div>
                         </div>
@@ -589,63 +575,7 @@
         const filenameInput = document.getElementById("filename");
         const fileInput = document.getElementById("file");
         const architectureInput = document.getElementById("architecture");
-        const threatCount = document.getElementById("threat-count");
-        const progressFill = document.getElementById("progress-fill");
-        const progressNotice = document.getElementById("progress-notice");
-        const fileProcessing = document.getElementById("file-processing");
-        const limitWarning = document.getElementById("limit-warning");
-
-        // Function to update threat count display
-        function updateThreatCount(count) {
-            const percentage = Math.min((count / 1000) * 100, 100);
-            threatCount.textContent = `${count}/1000`;
-            progressFill.style.width = `${percentage}%`;
-            
-            // Change color based on percentage
-            if (count > 1000) {
-                progressFill.style.background = "linear-gradient(90deg, #f44336 0%, #d32f2f 100%)";
-                limitWarning.textContent = "File exceeds 1000 threats! Only the first 1000 will be processed.";
-            } else if (percentage > 90) {
-                progressFill.style.background = "linear-gradient(90deg, #ff9800 0%, #ff5722 100%)";
-                limitWarning.textContent = "File is close to the limit. Consider reducing threats if possible.";
-            } else if (percentage > 70) {
-                progressFill.style.background = "linear-gradient(90deg, #ffc107 0%, #ff9800 100%)";
-                limitWarning.textContent = "Maximum of 1000 threats supported. Additional threats will be truncated.";
-            } else {
-                progressFill.style.background = "linear-gradient(90deg, #4CAF50 0%, #2E7D32 100%)";
-                limitWarning.textContent = "Maximum of 1000 threats supported. Additional threats will be truncated.";
-            }
-            
-            // Show the progress notice
-            progressNotice.style.display = 'block';
-        }
-
-        // Function to parse CSV and count rows (threats)
-        function parseCSVAndCountRows(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    try {
-                        const text = e.target.result;
-                        // Count the number of lines minus the header (if exists)
-                        const lines = text.split('\n').filter(line => line.trim() !== '');
-                        // Assuming first row is header, so threats count is lines.length - 1
-                        const threatCount = Math.max(0, lines.length - 1);
-                        resolve(threatCount);
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                
-                reader.onerror = function() {
-                    reject(new Error('Failed to read file'));
-                };
-                
-                reader.readAsText(file);
-            });
-        }
-
+        
         // Drag and drop functionality
         const fileInputLabel = document.querySelector('.fileInput');
         
