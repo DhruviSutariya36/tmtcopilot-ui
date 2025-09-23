@@ -630,44 +630,46 @@
         });
 
         // File input change event
-        fileInput.addEventListener('change',  async function() {
-            if (this.files && this.files[0]) {
+        fileInput.addEventListener('change', async function() {
+                if (this.files && this.files[0]) {
+                    const fileName = this.files[0].name;
+                const fileExt = fileName.split('.').pop().toLowerCase();
+
+                if (fileExt !== "csv") {
+                    alert("Only CSV files are supported.");
+                    this.value = ""; // reset input
+                    document.querySelector('.file-input-text-csv').textContent = "Click to browse or drag & drop your CSV file";
+                    document.querySelector('.file-input-subtext-csv').textContent = "Maximum file size: 10MB";
+                    return;
+                }
+
                 document.querySelector('.file-input-text-csv').textContent = this.files[0].name;
                 document.querySelector('.file-input-subtext-csv').textContent =
                     'File selected: ' + (this.files[0].size / 1024 / 1024).toFixed(2) + 'MB';
                     
-                // Show processing indicator
-                fileProcessing.style.display = 'block';
-                progressNotice.style.display = 'none';
-
-                try {
-                    // Parse the CSV and count threats
-                    const threatCount = await parseCSVAndCountRows(this.files[0]);
-                    
-                    // Update the UI with the threat count
-                    updateThreatCount(threatCount);
-                } catch (error) {
-                    console.error('Error parsing CSV:', error);
-                    // Fallback: show a default count if parsing fails
-                    updateThreatCount(0);
-                    alert('Could not parse the CSV file. Please make sure it is a valid CSV format.');
-                } finally {
-                    // Hide processing indicator
-                    fileProcessing.style.display = 'none';
-                }
+                            
+                
             }
         });
 
         // Form submission
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
+            const fileField = form.querySelector('input[name="file"]');
+            const fileName = fileField.files[0]?.name || "";
+            const fileExt = fileName.split('.').pop().toLowerCase();
+
+            if (fileExt !== "csv") {
+                alert("Only CSV files are supported.");
+                return;
+            }
+            
             spinner.style.display = "flex";
             successMessage.style.display = "none";
             downloadSection.style.display = "none";
             
             startTime = new Date();
             const formData = new FormData(form);
-            const fileField = form.querySelector('input[name="file"]');
             const originalName = fileField.files[0]?.name || "download.csv";
             const enrichedName = "threat_analysis_" + originalName.replace(/ /g, "_");
             const architectureFile = document.getElementById("architecture").files[0];
@@ -692,6 +694,7 @@
                 while (true) {
                     const statusResp = await fetch(statusUrl);
                     const statusData = await statusResp.json();
+
                     console.log("Durable status:", statusData);
                     runtimeStatus = statusData.runtimeStatus;
 
