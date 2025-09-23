@@ -655,6 +655,7 @@
         // Form submission
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
+            const spinnerText = spinner.querySelector(".spinner-text");
             const fileField = form.querySelector('input[name="file"]');
             const fileName = fileField.files[0]?.name || "";
             const fileExt = fileName.split('.').pop().toLowerCase();
@@ -665,6 +666,7 @@
             }
             
             spinner.style.display = "flex";
+            spinnerText.textContent = "Analyzing your CSV. This may take a while...";
             successMessage.style.display = "none";
             downloadSection.style.display = "none";
             
@@ -698,6 +700,16 @@
                     console.log("Durable status:", statusData);
                     runtimeStatus = statusData.runtimeStatus;
 
+                    if (statusData.customStatus) {
+                        const stage = statusData.customStatus.stage || "";
+                        const batchRange = statusData.customStatus.batch_range || "";
+                        const total = statusData.customStatus.total || 0;
+
+                        if (stage === "Enriching batch" && batchRange && total) {
+                            spinnerText.textContent = `Enriching rows ${batchRange} rows out of ${total}`;
+                        } 
+                    }
+
                     if (runtimeStatus === "Completed") {
                         enrichedBlobUrl = statusData.output.enriched_blob_url;
                         // Calculate time taken
@@ -717,15 +729,6 @@
                         alert("Processing failed.");
                         spinner.style.display = "none";
                         return;
-                    }
-
-                    // Optional: show progress message
-                    if (statusData.customStatus) {
-                        let progressText = `Stage: ${statusData.customStatus.stage}`;
-                        if (statusData.output && statusData.output.total_rows !== undefined) {
-                            progressText += ` | Total rows: ${statusData.output.total_rows}`;
-                        }
-                        spinner.querySelector(".spinner-text").textContent = progressText;
                     }
 
                     await new Promise(r => setTimeout(r, 5000)); // poll every 5s
