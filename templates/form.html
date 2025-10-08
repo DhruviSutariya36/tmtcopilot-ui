@@ -702,11 +702,11 @@
 
                     if (statusData.customStatus) {
                         const stage = statusData.customStatus.stage || "";
-                        const batchRange = statusData.customStatus.batch_range || "";
+                        const batchRange = statusData.customStatus.range || "";
                         const total = statusData.customStatus.total || 0;
                         const stageMessages = {
                             "Parsing CSV": "Parsing and validating your data...",
-                            "Enriching batch": `Enriching batch : ${batchRange} rows out of ${total};`,
+                            "Enriching batch": `Enriching batch : ${batchRange} rows out of ${total}`,
                             "Saving enriched CSV": "Saving enriched data...",
                             "Completed": "Process completed successfully!"
                         };
