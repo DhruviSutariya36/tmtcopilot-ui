@@ -659,7 +659,7 @@
             const fileField = form.querySelector('input[name="file"]');
             const fileName = fileField.files[0]?.name || "";
             const fileExt = fileName.split('.').pop().toLowerCase();
-
+            
             if (fileExt !== "csv") {
                 alert("Only CSV files are supported.");
                 return;
@@ -704,10 +704,17 @@
                         const stage = statusData.customStatus.stage || "";
                         const batchRange = statusData.customStatus.batch_range || "";
                         const total = statusData.customStatus.total || 0;
-
-                        if (stage === "Enriching batch" && batchRange && total) {
-                            spinnerText.textContent = `Enriching batch : ${batchRange} rows out of ${total}`;
-                        } 
+                        const stageMessages = {
+                            "Parsing CSV": "Parsing and validating your data...",
+                            "Enriching batch": `Enriching batch : ${batchRange} rows out of ${total};`,
+                            "Saving enriched CSV": "Saving enriched data...",
+                            "Completed": "Process completed successfully!"
+                        };
+                        if (stageMessages[stage]) {
+                            spinnerText.textContent = stageMessages[stage];
+                        } else {
+                            spinnerText.textContent = stage;
+                        }
                     }
 
                     if (runtimeStatus === "Completed") {
