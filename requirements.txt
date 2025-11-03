@@ -5,3 +5,4 @@ gunicorn
 azure-storage-blob==12.19.1
 python-dotenv==1.0.1
 requests_toolbelt
+setuptools==80.9.0
